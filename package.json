@@ -1,0 +1,23 @@
+{
+  "name": "xpay-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.1",
+    "express-basic-auth": "^1.2.1",
+    "jwt-simple": "^0.5.6",
+    "mongoose": "^6.3.3",
+    "passport": "^0.5.3",
+    "passport-http-bearer": "^1.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
+}
