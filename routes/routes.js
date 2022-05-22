@@ -10,12 +10,15 @@ const passport = require('passport');
 const Strategy = require('passport-http-bearer').Strategy;
 
 passport.use(new Strategy(async (token, cb) => {
-	const account = await Account.findOne({address: token}).exec();
+	const account = await Account.findOne({auth_token: token}).exec();
+
 	if (!account) {
+		console.log('No account');
 		return cb(null, false);
+	} else {
+		console.log('Account success!');
+		return cb(null, account);
 	}
-	console.log('strategy account::',account);
-	return cb(null, account);
 }));
 
 // 초기화면 앱 구동 버전 체크
@@ -129,8 +132,8 @@ router.post('/account/registration', async (req, res) => {
 router.get('/account/status',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
-		console.log('status:',req.user);
 		res.json({
+			wallet: req.user.wallet,
 			collateral_name: req.user.collateral_name,
 			collateral_amount: req.user.collateral_amount,
 			collateral_price: req.user.collateral_price,
