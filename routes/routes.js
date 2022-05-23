@@ -116,7 +116,7 @@ router.post('/account/registration', async (req, res) => {
 		});
 		const created = await newAccount.save();
 		res.json({
-			fin_num: auth_token
+			auth_token: auth_token
 		});
 	} else {
 		res.status(422).json({
