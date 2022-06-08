@@ -14,6 +14,16 @@ const dataSchema = new mongoose.Schema({
 	token_limit: {required: true,type: Number},
 	token_using: {required: true,type: Number},
 	token_balance: {required: true,type: Number},
+	withdrawable: {required: true,type: Number},
+	deposit: {required: true,type: Number},
+	points: {required: true,type: Number},
+	grade: {required: true,type: Number},
+	payment_date: {required: true,type: Number},
+	payment_now: {required: true,type: Number},
+	currency: {required: true,type: Number},
+	payment_now: {required: true,type: Number},
+
+
 	fcm_token: {required: false,type: String},
 	geolocation: {required: false,type: String},
 	user_type: {required: false,type: String},
