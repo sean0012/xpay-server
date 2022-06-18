@@ -20,10 +20,6 @@ const dataSchema = new mongoose.Schema({
 	grade: {required: true,type: Number},
 	payment_date: {required: true,type: Number},
 	payment_now: {required: true,type: Number},
-	currency: {required: true,type: Number},
-	payment_now: {required: true,type: Number},
-
-
 	fcm_token: {required: false,type: String},
 	geolocation: {required: false,type: String},
 	user_type: {required: false,type: String},
