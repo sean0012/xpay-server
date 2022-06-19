@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const Version = require('../models/version');
 const Account = require('../models/account');
+const Transfer = require('../models/transfer');
 
 const passport = require('passport');
 const Strategy = require('passport-http-bearer').Strategy;
@@ -113,6 +114,10 @@ router.post('/account/registration', async (req, res) => {
 			token_limit: 0,
 			token_using: 0,
 			token_balance: 0,
+			withdrawable: 0,
+			deposit: 0,
+			points: 0,
+			grade: 3,
 		});
 		const created = await newAccount.save();
 		res.json({
@@ -144,6 +149,20 @@ router.get('/account/status',
 			token_limit: req.user.token_limit,
 			token_using: req.user.token_using,
 			token_balance: req.user.token_balance,
+		});
+	}
+);
+
+// 거래내역
+router.get('/trades',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		console.log('req.user:',req.user);
+		const transfers = await req.user.populate('transfers');
+		console.log('transfers:',transfers);
+
+		res.json({
+			trades: transfers.transfers
 		});
 	}
 );
