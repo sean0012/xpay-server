@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
-	account_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
+	sender_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
 	receiver_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
 	receiver_name: {type: String},
 	currency: {type: String},

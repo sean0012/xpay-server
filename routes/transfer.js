@@ -116,7 +116,45 @@ router.post('/payment_cont',
 			dynamic_code: req.body.dynamic_code,
 		};
 		const transfer = await Transfer.findOne(params).exec();
-		console.log('transfer:',transfer)
+		console.log('transfer:',transfer.amount)
+		console.log('user:',req.user.token_balance)
+		if (req.user.token_balance < transfer.amount) {
+			res.status(422).json({
+				error: {
+					code: 'NOT_ENOUGH_BALANCE',
+					message: 'Not enough balance'
+				}
+			});
+			return;
+		}
+		if (transfer.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+
+		if (transfer.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Payment status is ${transfer.status}`
+				}
+			});
+			return;
+		}
+
+		//save
+		const newBalance = req.user.token_balance - transfer.amount;
+		transfer.token_balance = newBalance;
+		transfer.status = 'PAID';
+		transfer.sender_id = req.user._id;
+		const updatedTransfer = await transfer.save();
+
+		res.json(updatedTransfer);
 	}
 );
 
