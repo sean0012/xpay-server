@@ -5,25 +5,11 @@ const express = require('express');
 const router = express.Router();
 const Version = require('../models/version');
 const Account = require('../models/account');
-const Transfer = require('../models/transfer');
 
 const passport = require('passport');
-const Strategy = require('passport-http-bearer').Strategy;
-
-passport.use(new Strategy(async (token, cb) => {
-	const account = await Account.findOne({auth_token: token}).exec();
-
-	if (!account) {
-		console.log('No account');
-		return cb(null, false);
-	} else {
-		console.log('Account success!');
-		return cb(null, account);
-	}
-}));
 
 // 초기화면 앱 구동 버전 체크
-router.post('/account/first_run', async (req, res) => {
+router.post('/first_run', async (req, res) => {
 	// validate required params
 	if (!req.body.version) {
 		res.status(400).json({
@@ -59,7 +45,7 @@ router.post('/account/first_run', async (req, res) => {
 });
 
 // 최초지갑등록
-router.post('/account/registration', async (req, res) => {
+router.post('/registration', async (req, res) => {
 	// validate required params
 	if (!req.body.wallet) {
 		res.status(400).json({
@@ -134,7 +120,7 @@ router.post('/account/registration', async (req, res) => {
 });
 
 // 지갑현황
-router.get('/account/status',
+router.get('/status',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		res.json({
@@ -149,20 +135,6 @@ router.get('/account/status',
 			token_limit: req.user.token_limit,
 			token_using: req.user.token_using,
 			token_balance: req.user.token_balance,
-		});
-	}
-);
-
-// 거래내역
-router.get('/trades',
-	passport.authenticate('bearer', { session: false }),
-	async (req, res) => {
-		console.log('req.user:',req.user);
-		const transfers = await req.user.populate('transfers');
-		console.log('transfers:',transfers);
-
-		res.json({
-			trades: transfers.transfers
 		});
 	}
 );

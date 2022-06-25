@@ -8,20 +8,20 @@ const dataSchema = new mongoose.Schema({
 	settlement_date: {type: Date, required: true},
 	settlement_name: {type: String, required: true},
 	settlement_status: {type: String, default: 'waiting'}, // waiting | done
-	amount: {type: Number},
-	fee: {type: Number},
-	date: {type: Date},
-	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
-	products: {type: Array},
-	status: {type: String}, // init | cancel | paid | expired
+	title: {type: String},
 	amount: {type: Number},
 	items: [{
 		name: {type: String},
 		option: {type: String},
 		price: {type: String},
 		quantity: {type: Number},
-		amount: {type: Number},
 	}],
+	fee: {type: Number},
+	date: {type: Date},
+	dynamic_code: {type: String, required: false},
+	expiry: {type: Date},
+	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
+	status: {type: String}, // INIT | CANCEL | PAID | EXPIRED
 });
 
 module.exports = mongoose.model('Transfer', dataSchema);
