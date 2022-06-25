@@ -64,7 +64,7 @@ router.post('/payment_init',
 		const code = Util.generateDynamicCode(req.user._id);
 		console.log('dynamic_code:',code)
 
-		const title = req.user.merchant_name ? req.user.merchant_name : '';
+		const title = req.user.merchant_name ? req.user.merchant_name : '상점이름1';
 
 		const newTransfer = new Transfer({
 			receiver_id: req.user._id,
@@ -95,6 +95,28 @@ router.post('/payment_init',
 				message: 'Error occured while creating transfer'
 			});
 		}
+	}
+);
+
+router.post('/payment_cont',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.dynamic_code) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter dynamic_code is required'
+				}
+			});
+			return;
+		}
+
+		const params = {
+			dynamic_code: req.body.dynamic_code,
+		};
+		const transfer = await Transfer.findOne(params).exec();
+		console.log('transfer:',transfer)
 	}
 );
 
