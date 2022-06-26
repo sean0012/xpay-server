@@ -24,7 +24,6 @@ const dataSchema = new mongoose.Schema({
 	last_name: {required: false, type: String},
 	first_name: {required: false, type: String},
 	merchant_name: {required: false, type: String},
-	transfers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Transfer' }],
 });
 
 module.exports = mongoose.model('Account', dataSchema);

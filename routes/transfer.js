@@ -12,12 +12,15 @@ const Util = require('../util');
 router.get('/',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
-		console.log('req.user:',req.user);
-		const transfers = await req.user.populate('transfers');
-		console.log('transfers:',transfers);
+		const transfers = await Transfer.find({
+			'$or': [
+				{sender_id: req.user._id},
+				{receiver_id: req.user._id},
+			]
+		}).exec();
 
 		res.json({
-			trades: transfers.transfers
+			trades: transfers
 		});
 	}
 );
@@ -59,7 +62,7 @@ router.post('/payment_init',
 			}
 		}
 		const timestamp = Date.now();
-		const expiry = new Date(timestamp + 30000).getTime();
+		const expiry = new Date(timestamp + 60000).getTime();
 
 		const code = Util.generateDynamicCode(req.user._id);
 		console.log('dynamic_code:',code)
@@ -118,6 +121,15 @@ router.post('/payment_cont',
 		const transfer = await Transfer.findOne(params).exec();
 		console.log('transfer:',transfer.amount)
 		console.log('user:',req.user.token_balance)
+		if (transfer.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Payment status is ${transfer.status}`
+				}
+			});
+			return;
+		}
 		if (req.user.token_balance < transfer.amount) {
 			res.status(422).json({
 				error: {
@@ -137,22 +149,15 @@ router.post('/payment_cont',
 			return;
 		}
 
-		if (transfer.status !== 'INIT') {
-			res.status(422).json({
-				error: {
-					code: 'INVALID_STATUS',
-					message: `Payment status is ${transfer.status}`
-				}
-			});
-			return;
-		}
-
 		//save
-		const newBalance = req.user.token_balance - transfer.amount;
-		transfer.token_balance = newBalance;
+		req.user.token_balance = req.user.token_balance - transfer.amount;
+		const updatedUser = await req.user.save();
+		console.log('user:',updatedUser);
+
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
 		const updatedTransfer = await transfer.save();
+		console.log('updatedTransfer:',updatedTransfer)
 
 		res.json(updatedTransfer);
 	}
