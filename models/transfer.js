@@ -8,7 +8,6 @@ const dataSchema = new mongoose.Schema({
 	settlement_date: {type: Date, required: true},
 	settlement_name: {type: String, required: true},
 	settlement_status: {type: String, default: 'WAITING'}, // WAITING | DONE
-	title: {type: String},
 	amount: {type: Number},
 	items: [{
 		name: {type: String},

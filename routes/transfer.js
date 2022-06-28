@@ -67,16 +67,15 @@ router.post('/payment_init',
 		const code = Util.generateDynamicCode(req.user._id);
 		console.log('dynamic_code:',code)
 
-		const title = req.user.merchant_name ? req.user.merchant_name : '상점이름1';
-
 		const newTransfer = new Transfer({
 			receiver_id: req.user._id,
+			receiver_name: req.user.merchant_name,
 			currency: 'MRF.KRW',
 			settlement_date: (new Date('2022-07-31T00:00:00')).getTime(),
 			settlement_name: '7월',
 			settlement_status: 'WAITING',
-			title: title,
 			amount: amount,
+			items: req.body.items,
 			fee: amount * 0.01,
 			date: Date.now(),
 			type: 'PAYMENT',
@@ -102,6 +101,55 @@ router.post('/payment_init',
 );
 
 router.post('/payment_cont',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.dynamic_code) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter dynamic_code is required'
+				}
+			});
+			return;
+		}
+
+		const params = {
+			dynamic_code: req.body.dynamic_code,
+		};
+		const transfer = await Transfer.findOne(params).exec();
+		if (transfer.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Payment status is ${transfer.status}`
+				}
+			});
+			return;
+		}
+		if (transfer.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+
+		res.json({
+			receiver_id: transfer.receiver_id,
+			receiver_name: transfer.receiver_name,
+			currency: transfer.currency,
+			amount: transfer.amount,
+			items: transfer.items,
+			dynamic_code: transfer.dynamic_code,
+			type: transfer.type,
+		});
+	}
+);
+
+router.post('/payment_comp',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
