@@ -9,7 +9,7 @@ const passport = require('passport');
 const Util = require('../util');
 
 // 거래 내역
-router.get('/',
+router.get('/trade_hist',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		const transfers = await Transfer.find({
@@ -26,7 +26,7 @@ router.get('/',
 );
 
 // 결제 요청
-router.post('/payment_init',
+router.post('/pamt_init',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
@@ -100,7 +100,7 @@ router.post('/payment_init',
 	}
 );
 
-router.post('/payment_cont',
+router.post('/pamt_cont',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
@@ -149,7 +149,7 @@ router.post('/payment_cont',
 	}
 );
 
-router.post('/payment_comp',
+router.post('/pamt_comp',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
