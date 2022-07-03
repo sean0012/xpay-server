@@ -39,7 +39,7 @@ database.once('connected', () => {
 		if (docs.length) {
 			console.log('codes:',docs.length)
 		} else {
-			const pool = generate(6);
+			const pool = generate(4);
 			const docs = pool.map(code => ({
 				code: code,
 				used: false,
@@ -49,7 +49,7 @@ database.once('connected', () => {
 				console.log('error:',error)
 				console.log('docs:',results)
 
-				database.disconnect();
+				database.close();
 			});
 		}
 	});
