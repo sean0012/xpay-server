@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -18,6 +19,7 @@
     "passport-http-bearer": "^1.0.1"
   },
   "devDependencies": {
+    "jest": "^28.1.2",
     "nodemon": "^2.0.16"
   }
 }
