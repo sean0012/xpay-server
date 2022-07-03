@@ -14,13 +14,14 @@ const checkPrice = (amount, items) => {
 
 //const crypto = require('crypto');
 
-const generateDynamicCode = (id) => {
-	//const salt = 'xpayrandomisesalt';
-	const t = Date.now();
-	//const code = `${id}${salt}${t}`;
-	//console.log('code:',code);
-	//return crypto.createHash('sha256').update(code).digest('base64');
-	return t.toString().slice(1);
+const generateDynamicCode = async () => {
+	const DynamicCode = require('./models/dynamic_code');
+
+	const code = await DynamicCode.findOneAndUpdate(
+		{used: false},
+		{$set: {used: true}},
+	).exec();
+	return code.code;
 };
 
 module.exports = { checkPrice, generateDynamicCode };

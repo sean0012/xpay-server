@@ -64,7 +64,7 @@ router.post('/payment_init',
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + 60000).getTime();
 
-		const code = Util.generateDynamicCode(req.user._id);
+		const code = await Util.generateDynamicCode();
 		console.log('dynamic_code:',code)
 
 		const newTransfer = new Transfer({
