@@ -39,7 +39,7 @@ router.post('/pamt_init',
 			});
 			return;
 		}
-		const amount = Number(req.body.amount)
+		const amount = Number(req.body.amount);
 		if (isNaN(amount)) {
 			res.status(400).json({
 				error: {
@@ -118,6 +118,15 @@ router.post('/pamt_cont',
 			dynamic_code: req.body.dynamic_code,
 		};
 		const transfer = await Transfer.findOne(params).exec();
+		if (!transfer) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Payment data not found in server DB`
+				}
+			});
+			return;
+		}
 		if (transfer.status !== 'INIT') {
 			res.status(422).json({
 				error: {
@@ -138,6 +147,7 @@ router.post('/pamt_cont',
 		}
 
 		res.json({
+			session_id: transfer._id,
 			receiver_id: transfer.receiver_id,
 			receiver_name: transfer.receiver_name,
 			currency: transfer.currency,
@@ -153,22 +163,29 @@ router.post('/pamt_comp',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
-		if (!req.body.dynamic_code) {
+		if (!req.body.session_id) {
 			res.status(400).json({
 				error: {
 					code: 'MISSING_REQUIRED_PARAMS',
-					message: 'Parameter dynamic_code is required'
+					message: 'Parameter session_id is required'
 				}
 			});
 			return;
 		}
 
 		const params = {
-			dynamic_code: req.body.dynamic_code,
+			_id: req.body.session_id,
 		};
 		const transfer = await Transfer.findOne(params).exec();
-		console.log('transfer:',transfer.amount)
-		console.log('user:',req.user.token_balance)
+		if (!transfer) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Payment data not found in server DB`
+				}
+			});
+			return;
+		}
 		if (transfer.status !== 'INIT') {
 			res.status(422).json({
 				error: {
