@@ -16,7 +16,8 @@
     "jwt-simple": "^0.5.6",
     "mongoose": "^6.3.3",
     "passport": "^0.5.3",
-    "passport-http-bearer": "^1.0.1"
+    "passport-http-bearer": "^1.0.1",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "jest": "^28.1.2",
