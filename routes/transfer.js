@@ -7,6 +7,7 @@ const Account = require('../models/account');
 const Transfer = require('../models/transfer');
 const passport = require('passport');
 const Util = require('../util');
+const { v1: uuidv1 } = require('uuid');
 
 // 거래 내역
 router.get('/trade_hist',
@@ -84,17 +85,63 @@ router.post('/pamt_init',
 			expiry: expiry,
 		});
 		const created = await newTransfer.save();
-		console.log('created:',created);
-
 		if (created) {
 			res.json({
-				dynamic_code: code,
-				expire: expiry,
+				session_id: created._id,
+				dynamic_code: created.dynamic_code,
+				expire: created.expiry,
 			});
 		} else {
 			res.status(422).json({
 				code: 'CREATE_TRANSFER_ERROR',
 				message: 'Error occured while creating transfer'
+			});
+		}
+	}
+);
+
+// 결제 요청 리프레시
+router.post('/pamt_init_refresh',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.session_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		const transfer = await Transfer.findOne({_id: req.body.session_id}).exec();
+		if (transfer.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+		const timestamp = Date.now();
+		const expiry = new Date(timestamp + 60000).getTime();
+		transfer.expiry = expiry;
+
+		const code = await Util.generateDynamicCode();
+		transfer.dynamic_code = code;
+
+		const updated = await transfer.save();
+		if (updated) {
+			res.json({
+				session_id: updated._id,
+				dynamic_code: updated.dynamic_code,
+				expire: updated.expiry,
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_TRANSFER_ERROR',
+				message: 'Error occured while updating transfer'
 			});
 		}
 	}
@@ -219,12 +266,25 @@ router.post('/pamt_comp',
 		const updatedUser = await req.user.save();
 		console.log('user:',updatedUser);
 
+		const approval_id = uuidv1();
+		console.log('uuid v1:',approval_id);
+		transfer.approval_id = approval_id;
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
 		const updatedTransfer = await transfer.save();
-		console.log('updatedTransfer:',updatedTransfer)
 
 		res.json(updatedTransfer);
+
+		if (updatedTransfer) {
+			res.json({
+				result: 'OK'
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_TRANSFER_ERROR',
+				message: 'Error occured while updating transfer'
+			});
+		}
 	}
 );
 

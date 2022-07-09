@@ -25,10 +25,9 @@ passport.use(new Strategy(async (token, cb) => {
 	const account = await Account.findOne({auth_token: token}).exec();
 
 	if (!account) {
-		console.log('No account');
+		console.log('passport No account', token);
 		return cb(null, false);
 	} else {
-		console.log('Account success!');
 		return cb(null, account);
 	}
 }));
