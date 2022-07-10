@@ -64,6 +64,7 @@ router.post('/pamt_init',
 		}
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + 60000).getTime();
+		console.log('expiry:',expiry)
 
 		const code = await Util.generateDynamicCode();
 		console.log('dynamic_code:',code)
@@ -89,7 +90,7 @@ router.post('/pamt_init',
 			res.json({
 				session_id: created._id,
 				dynamic_code: created.dynamic_code,
-				expire: created.expiry,
+				expire: created.expiry.getTime(),
 			});
 		} else {
 			res.status(422).json({
@@ -136,7 +137,7 @@ router.post('/pamt_init_refresh',
 			res.json({
 				session_id: updated._id,
 				dynamic_code: updated.dynamic_code,
-				expire: updated.expiry,
+				expire: updated.expiry.getTime(),
 			});
 		} else {
 			res.status(422).json({
@@ -264,17 +265,17 @@ router.post('/pamt_comp',
 		//save
 		req.user.token_balance = req.user.token_balance - transfer.amount;
 		const updatedUser = await req.user.save();
-		console.log('user:',updatedUser);
 
-		const approval_id = uuidv1();
-		console.log('uuid v1:',approval_id);
-		transfer.approval_id = approval_id;
+		const merchant = await Account.findOneAndUpdate(
+			{_id: transfer.receiver_id},
+			{$inc: {token_balance: transfer.amount}}
+		).exec();
+		console.log('merchant findOneAndUpdate:',merchant)
+
+		transfer.approval_id = uuidv1();
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
 		const updatedTransfer = await transfer.save();
-
-		res.json(updatedTransfer);
-
 		if (updatedTransfer) {
 			res.json({
 				result: 'OK'
@@ -283,6 +284,66 @@ router.post('/pamt_comp',
 			res.status(422).json({
 				code: 'UPDATE_TRANSFER_ERROR',
 				message: 'Error occured while updating transfer'
+			});
+		}
+	}
+);
+
+// PAYEE 결제취소 요청
+router.post('/pamt_canc',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.approval_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter approval_id is required'
+				}
+			});
+			return;
+		}
+
+		const transfer = await Transfer.findOne({approval_id: req.body.approval_id}).exec();
+		if (!transfer) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Payment data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (transfer.status === 'CANCEL') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS_CANCEL',
+					message: `Payment status is ${transfer.status}`
+				}
+			});
+			return;
+		}
+
+		const merchant = await Account.findOneAndUpdate(
+			{_id: transfer.receiver_id},
+			{$inc: {token_balance: -transfer.amount}}
+		).exec();
+
+		const payer = await Account.findOneAndUpdate(
+			{_id: transfer.sender_id},
+			{$inc: {token_balance: transfer.amount}}
+		).exec();
+
+		transfer.status = 'CANCEL'
+		const updatedTransfer = await transfer.save();
+		if (updatedTransfer) {
+			res.json({
+				result: 'OK'
+			});
+		} else {
+			res.status(422).json({
+				code: 'CANCEL_TRANSFER_ERROR',
+				message: 'Error occured while cancel update transfer'
 			});
 		}
 	}
