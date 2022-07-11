@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const QR_EXPIRE = 3 * 60 * 1000;
+
 const jwt = require('jwt-simple');
 const express = require('express');
 const router = express.Router();
@@ -63,7 +65,7 @@ router.post('/pamt_init',
 			}
 		}
 		const timestamp = Date.now();
-		const expiry = new Date(timestamp + 60000).getTime();
+		const expiry = new Date(timestamp + QR_EXPIRE).getTime();
 		console.log('expiry:',expiry)
 
 		const code = await Util.generateDynamicCode();
@@ -126,7 +128,7 @@ router.post('/pamt_init_refresh',
 			return;
 		}
 		const timestamp = Date.now();
-		const expiry = new Date(timestamp + 60000).getTime();
+		const expiry = new Date(timestamp + QR_EXPIRE).getTime();
 		transfer.expiry = expiry;
 
 		const code = await Util.generateDynamicCode();
