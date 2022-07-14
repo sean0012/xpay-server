@@ -21,7 +21,11 @@ const dataSchema = new mongoose.Schema({
 	expiry: {type: Date},
 	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
 	status: {type: String}, // INIT | CANCEL | PAID | EXPIRED
-	approval_id: {type: String, required: false}, // uuid
+	approval_id: {type: String, required: false}, // 9 digits number
+	points_spent: {type: Number},
+	points_gained: {type: Number},
+	memo: {type: String},
+	payer_signature: {type: String},
 });
 
 module.exports = mongoose.model('Transfer', dataSchema);

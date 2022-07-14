@@ -9,7 +9,6 @@ const Account = require('../models/account');
 const Transfer = require('../models/transfer');
 const passport = require('passport');
 const Util = require('../util');
-const { v1: uuidv1 } = require('uuid');
 
 // 거래 내역
 router.get('/trade_hist',
@@ -198,13 +197,11 @@ router.post('/pamt_cont',
 
 		res.json({
 			session_id: transfer._id,
-			receiver_id: transfer.receiver_id,
-			receiver_name: transfer.receiver_name,
+			merchant_name: transfer.receiver_name,
 			currency: transfer.currency,
 			amount: transfer.amount,
 			items: transfer.items,
 			dynamic_code: transfer.dynamic_code,
-			type: transfer.type,
 		});
 	}
 );
@@ -274,7 +271,7 @@ router.post('/pamt_comp',
 		).exec();
 		console.log('merchant findOneAndUpdate:',merchant)
 
-		transfer.approval_id = uuidv1();
+		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
 		const updatedTransfer = await transfer.save();

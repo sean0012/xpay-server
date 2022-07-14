@@ -11,9 +11,6 @@ const checkPrice = (amount, items) => {
 	return amount === total;
 };
 
-
-//const crypto = require('crypto');
-
 const generateDynamicCode = async () => {
 	const DynamicCode = require('./models/dynamic_code');
 
@@ -24,4 +21,10 @@ const generateDynamicCode = async () => {
 	return code.code;
 };
 
-module.exports = { checkPrice, generateDynamicCode };
+const generateApprovalId = () => {
+	const random3Digits = Math.floor(Math.random()*(999-100+1)+100);
+	const timestampLast6Digits = Date.now().toString().slice(6);
+	return `${timestampLast6Digits}${random3Digits}`
+};
+
+module.exports = { checkPrice, generateDynamicCode, generateApprovalId };
