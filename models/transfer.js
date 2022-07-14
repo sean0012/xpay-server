@@ -24,8 +24,8 @@ const dataSchema = new mongoose.Schema({
 	approval_id: {type: String, required: false}, // 9 digits number
 	points_spent: {type: Number},
 	points_gained: {type: Number},
-	memo: {type: String},
-	payer_signature: {type: String},
+	memo: {type: String, maxLength: 256},
+	payer_signature: {type: String, maxLength: 256},
 });
 
 module.exports = mongoose.model('Transfer', dataSchema);

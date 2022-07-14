@@ -274,6 +274,9 @@ router.post('/pamt_comp',
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
+		transfer.memo_message = req.memo_message;
+		transfer.payer_signature = req.payer_signature;
+
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
 			res.json({
