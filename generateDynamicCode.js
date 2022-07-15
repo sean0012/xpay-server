@@ -55,19 +55,4 @@ database.once('connected', () => {
 	});
 });
 
-
-//let pool = [];
-// const pool = generate(2);
-
-	// if (isNaN(count) || count === 0) {
-	// 	console.log('Generate DynamicCode');
-	// 	const pool = generate(2);
-		// DynamicCode.insertMany(docs, (error, results) => {
-		// 	console.log('error:',error)
-		// 	console.log('docs:',results)
-		// });
-	// } else {
-	// 	console.log(`DynamicCode count: ${count}`);
-	// }
-
-//module.exports = pool;
+module.exports = { generate };
