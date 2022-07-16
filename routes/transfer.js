@@ -19,10 +19,46 @@ router.get('/trade_hist',
 				{sender_id: req.user._id},
 				{receiver_id: req.user._id},
 			]
-		}).exec();
+		},
+		{
+			'sender_id': 0,
+			'receiver_id': 0,
+			'settlement_date': 0,
+			'settlement_name': 0,
+			'settlement_status': 0,
+		},
+		{
+			sort: {
+				createdAt: -1,
+			}
+		}).lean();
+
+		const trades = transfers.map(transfer => ({
+			session_id: transfer.id,
+			merchant_name: transfer.receiver_name,
+			currency: transfer.currency,
+			amount: transfer.amount,
+			items: transfer.items.map(item => ({
+				name: item.name,
+				option: item.option,
+				price: +item.price,
+				quantity: +item.quantity,
+			})),
+			fee: transfer.fee,
+			dynamic_code: transfer.dynamic_code,
+			expiry: new Date(transfer.expiry).getTime(),
+			type: transfer.type,
+			status: transfer.status,
+			approval_id: req.user._id === transfer.receiver_id ? transfer.approval_id : undefined,
+			points_spent: transfer.points_spent,
+			points_gained: transfer.points_gained,
+			memo: transfer.memo,
+			payer_signature: transfer.payer_signature,
+			created_at: new Date(transfer.createdAt).getTime(),
+		}));
 
 		res.json({
-			trades: transfers
+			trades,
 		});
 	}
 );
@@ -80,7 +116,6 @@ router.post('/pamt_init',
 			amount: amount,
 			items: req.body.items,
 			fee: amount * 0.01,
-			date: Date.now(),
 			type: 'PAYMENT',
 			status: 'INIT',
 			dynamic_code: code,
@@ -195,12 +230,19 @@ router.post('/pamt_cont',
 			return;
 		}
 
+		const items = transfer.items.map(item => ({
+			name: item.name,
+			option: item.option,
+			price: item.price,
+			quantity: item.quantity,
+		}));
+
 		res.json({
 			session_id: transfer._id,
 			merchant_name: transfer.receiver_name,
 			currency: transfer.currency,
 			amount: transfer.amount,
-			items: transfer.items,
+			items,
 			dynamic_code: transfer.dynamic_code,
 		});
 	}

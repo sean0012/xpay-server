@@ -16,7 +16,6 @@ const dataSchema = new mongoose.Schema({
 		quantity: {type: Number},
 	}],
 	fee: {type: Number},
-	date: {type: Date},
 	dynamic_code: {type: String, required: false},
 	expiry: {type: Date},
 	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
@@ -26,6 +25,6 @@ const dataSchema = new mongoose.Schema({
 	points_gained: {type: Number},
 	memo: {type: String, maxLength: 256},
 	payer_signature: {type: String, maxLength: 256},
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Transfer', dataSchema);
