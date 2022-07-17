@@ -302,14 +302,56 @@ router.post('/pamt_comp',
 			});
 			return;
 		}
+		console.log('user points:',req.user.points)
+		console.log('points using:', req.payer_points_using)
+		if (req.payer_points_using) {
+			const payerPointsUsing = Number(req.body.payer_points_using);
+			if (isNaN(payerPointsUsing)) {
+				res.status(400).json({
+					error: {
+						code: 'INVALID_PARAMS',
+						message: 'Parameter payer_points_using is not a number'
+					}
+				});
+				return;
+			}
+			if (payerPointsUsing > req.user.points) {
+				res.status(422).json({
+					error: {
+						code: 'NOT_ENOUGH_POINTS',
+						message: `Using points: ${payerPointsUsing} Payer points: ${req.user.points}`
+					}
+				});
+				return;
+			}
+			if (payerPointsUsing > transfer.amount) {
+				res.status(422).json({
+					error: {
+						code: 'USING_TOO_MUCH_POINTS',
+						message: `Using points: ${payerPointsUsing} Pay amount: ${transfer.amount}`
+					}
+				});
+				return;
+			}
+		}
 
 		//save
-		req.user.token_balance = req.user.token_balance - transfer.amount;
+		let amountToDeductFromPayer = transfer.amount;
+		if (req.payer_points_using) {
+			amountToDeductFromPayer -= +req.payer_points_using;
+			req.user.points -= +req.payer_points_using;
+		}
+		req.user.token_balance -= amountToDeductFromPayer;
 		const updatedUser = await req.user.save();
+
+		const inc = {token_balance: transfer.amount};
+		if (req.payer_points_using) {
+			inc.points = +req.payer_points_using;
+		}
 
 		const merchant = await Account.findOneAndUpdate(
 			{_id: transfer.receiver_id},
-			{$inc: {token_balance: transfer.amount}}
+			{$inc: inc}
 		).exec();
 		console.log('merchant findOneAndUpdate:',merchant)
 
@@ -368,9 +410,13 @@ router.post('/pamt_canc',
 			return;
 		}
 
+		const merchantInc = {token_balance: -transfer.amount};
+		// if (transfer.payer_points_using) {
+		// 	merchantInc.points
+		// }
 		const merchant = await Account.findOneAndUpdate(
 			{_id: transfer.receiver_id},
-			{$inc: {token_balance: -transfer.amount}}
+			{$inc: merchantInc}
 		).exec();
 
 		const payer = await Account.findOneAndUpdate(

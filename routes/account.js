@@ -102,7 +102,7 @@ router.post('/registration', async (req, res) => {
 			token_balance: 0,
 			withdrawable: 0,
 			deposit: 0,
-			points: 0,
+			points: 1000,
 			grade: 3,
 		});
 		const created = await newAccount.save();
@@ -135,6 +135,12 @@ router.get('/status',
 			token_limit: req.user.token_limit,
 			token_using: req.user.token_using,
 			token_balance: req.user.token_balance,
+			points: req.user.points,
+			grade: req.user.grade,
+			user_type: req.user.user_type,
+			first_name: req.user.first_name,
+			last_name: req.user.last_name,
+			merchant_name: req.user.merchant_name,
 		});
 	}
 );
