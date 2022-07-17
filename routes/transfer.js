@@ -297,8 +297,8 @@ router.post('/pamt_comp',
 			return;
 		}
 		console.log('user points:',req.user.points)
-		console.log('points using:', req.payer_points_using)
-		if (req.payer_points_using) {
+		console.log('points using:', req.body.payer_points_using)
+		if (req.body.payer_points_using) {
 			const payerPointsUsing = Number(req.body.payer_points_using);
 			if (isNaN(payerPointsUsing)) {
 				res.status(400).json({
@@ -331,16 +331,16 @@ router.post('/pamt_comp',
 
 		//save
 		let amountToDeductFromPayer = transfer.amount;
-		if (req.payer_points_using) {
-			amountToDeductFromPayer -= +req.payer_points_using;
-			req.user.points -= +req.payer_points_using;
+		if (req.body.payer_points_using) {
+			amountToDeductFromPayer -= +req.body.payer_points_using;
+			req.user.points -= +req.body.payer_points_using;
 		}
 		req.user.token_balance -= amountToDeductFromPayer;
 		const updatedUser = await req.user.save();
 
 		const inc = {token_balance: transfer.amount};
-		if (req.payer_points_using) {
-			inc.points = +req.payer_points_using;
+		if (req.body.payer_points_using) {
+			inc.points = +req.body.payer_points_using;
 		}
 
 		const merchant = await Account.findOneAndUpdate(
@@ -352,8 +352,8 @@ router.post('/pamt_comp',
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
-		transfer.memo = req.memo_message;
-		transfer.payer_signature = req.payer_signature;
+		transfer.memo = req.body.memo_message;
+		transfer.payer_signature = req.body.payer_signature;
 
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
