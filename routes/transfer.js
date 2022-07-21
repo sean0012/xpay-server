@@ -44,11 +44,52 @@ router.get('/trade_hist',
 			type: transfer.type,
 			status: transfer.status,
 			approval_id: transfer.approval_id,
-			points_spent: transfer.points_spent,
-			points_gained: transfer.points_gained,
+			payer_points_using: transfer.payer_points_using,
+			payer_points_gained: transfer.payer_points_gained,
 			memo: transfer.memo,
 			payer_signature: transfer.payer_signature,
 			created_at: new Date(transfer.createdAt).getTime(),
+			payment_time: new Date(transfer.payment_time).getTime(),
+		}));
+
+		res.json({
+			trades,
+		});
+	}
+);
+
+// 포인트 내역
+router.get('/point_hist',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		const paramStatus = req.query.status ? req.query.status.toUpperCase() : undefined;
+		const filter = {
+			'$or': [
+				{sender_id: req.user._id},
+				{receiver_id: req.user._id},
+			],
+			'$or': [
+				{payer_points_using: {$gt: 0}},
+				{payer_points_gained: {$gt: 0}},
+			],
+		};
+		if (paramStatus) filter.status = paramStatus;
+		const transfers = await Transfer.find(filter, {}, {
+			sort: {
+				createdAt: -1,
+			}
+		}).lean();
+
+		const trades = transfers.map(transfer => ({
+			session_id: transfer._id,
+			amount: transfer.amount,
+			title: transfer.receiver_name,
+			type: transfer.type,
+			status: transfer.status,
+			approval_id: transfer.approval_id,
+			payer_points_using: transfer.payer_points_using,
+			payer_points_gained: transfer.payer_points_gained,
+			payment_time: new Date(transfer.payment_time).getTime(),
 		}));
 
 		res.json({
@@ -95,10 +136,8 @@ router.post('/pamt_init',
 		}
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + QR_EXPIRE).getTime();
-		console.log('expiry:',expiry)
 
 		const code = await Util.generateDynamicCode();
-		console.log('dynamic_code:',code)
 
 		const newTransfer = new Transfer({
 			receiver_id: req.user._id,
@@ -334,6 +373,7 @@ router.post('/pamt_comp',
 		if (req.body.payer_points_using) {
 			amountToDeductFromPayer -= +req.body.payer_points_using;
 			req.user.points -= +req.body.payer_points_using;
+			transfer.payer_points_using = +req.body.payer_points_using;
 		}
 		req.user.token_balance -= amountToDeductFromPayer;
 		const updatedUser = await req.user.save();
@@ -354,6 +394,7 @@ router.post('/pamt_comp',
 		transfer.sender_id = req.user._id;
 		transfer.memo = req.body.memo_message;
 		transfer.payer_signature = req.body.payer_signature;
+		transfer.payment_time = Date.now();
 
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
@@ -394,10 +435,10 @@ router.post('/pamt_canc',
 			});
 			return;
 		}
-		if (transfer.status === 'CANCEL') {
+		if (transfer.status === 'CANCELED') {
 			res.status(422).json({
 				error: {
-					code: 'INVALID_STATUS_CANCEL',
+					code: 'INVALID_STATUS_CANCELED',
 					message: `Payment status is ${transfer.status}`
 				}
 			});
@@ -418,7 +459,7 @@ router.post('/pamt_canc',
 			{$inc: {token_balance: transfer.amount}}
 		).exec();
 
-		transfer.status = 'CANCEL'
+		transfer.status = 'CANCELED'
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
 			res.json({

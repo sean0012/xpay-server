@@ -19,12 +19,13 @@ const dataSchema = new mongoose.Schema({
 	dynamic_code: {type: String, required: false},
 	expiry: {type: Date},
 	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
-	status: {type: String}, // INIT | CANCEL | PAID | EXPIRED
+	status: {type: String}, // INIT | CANCELED | PAID | EXPIRED
 	approval_id: {type: String, required: false}, // 9 digits number
-	points_spent: {type: Number},
-	points_gained: {type: Number},
+	payer_points_using: {type: Number},
+	payer_points_gained: {type: Number},
 	memo: {type: String, maxLength: 256},
 	payer_signature: {type: String, maxLength: 256},
+	payment_time: {type: Date},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Transfer', dataSchema);
