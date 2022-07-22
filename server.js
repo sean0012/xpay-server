@@ -7,6 +7,7 @@ const passport = require('passport');
 const Strategy = require('passport-http-bearer').Strategy;
 const routes = require('./routes');
 const Account = require('./models/account');
+const workerSettlement = require('./worker/settlement');
 
 mongoose.connect(mongoString);
 const database = mongoose.connection;
@@ -17,6 +18,7 @@ database.on('error', (error) => {
 
 database.once('connected', () => {
 	console.log('Database Connected');
+	workerSettlement.check();
 });
 
 const app = express();

@@ -24,6 +24,8 @@ const dataSchema = new mongoose.Schema({
 	last_name: {required: false, type: String},
 	first_name: {required: false, type: String},
 	merchant_name: {required: false, type: String},
+	merchant_fee_rate: {required: false, type: Number},
+	merchant_points_rate: {required: false, type: Number},
 });
 
 module.exports = mongoose.model('Account', dataSchema);

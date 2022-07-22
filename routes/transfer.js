@@ -1,6 +1,4 @@
-require('dotenv').config();
-
-const QR_EXPIRE = 3 * 60 * 1000;
+const Config = require('../config');
 
 const jwt = require('jwt-simple');
 const express = require('express');
@@ -82,6 +80,7 @@ router.get('/point_hist',
 
 		const trades = transfers.map(transfer => ({
 			session_id: transfer._id,
+			currency: transfer.currency,
 			amount: transfer.amount,
 			title: transfer.receiver_name,
 			type: transfer.type,
@@ -135,9 +134,10 @@ router.post('/pamt_init',
 			}
 		}
 		const timestamp = Date.now();
-		const expiry = new Date(timestamp + QR_EXPIRE).getTime();
-
+		const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
 		const code = await Util.generateDynamicCode();
+		const feeRate = req.user.merchant_fee_rate ? req.user.merchant_fee_rate : Config.DEFAULT_FEE_RATE;
+		const pointsRate = req.user.merchant_points_rate ? req.user.merchant_points_rate : Config.DEFAULT_POINTS_RATE;
 
 		const newTransfer = new Transfer({
 			receiver_id: req.user._id,
@@ -148,7 +148,8 @@ router.post('/pamt_init',
 			settlement_status: 'WAITING',
 			amount: amount,
 			items: req.body.items,
-			fee: amount * 0.01,
+			fee: amount * feeRate,
+			payer_points_gained: amount * feeRate * pointsRate,
 			type: 'PAYMENT',
 			status: 'INIT',
 			dynamic_code: code,
@@ -195,8 +196,9 @@ router.post('/pamt_init_refresh',
 			return;
 		}
 		const timestamp = Date.now();
-		const expiry = new Date(timestamp + QR_EXPIRE).getTime();
+		const expiry = new Date(timestamp + QR_EXPIRE);
 		transfer.expiry = expiry;
+		transfer.createdAt = new Date(timestamp);
 
 		const code = await Util.generateDynamicCode();
 		transfer.dynamic_code = code;
