@@ -187,6 +187,15 @@ router.post('/pamt_init_refresh',
 			return;
 		}
 		const transfer = await Transfer.findOne({_id: req.body.session_id}).exec();
+		if (!transfer) {
+			res.status(400).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Transfer id not found ${req.body.session_id}`
+				}
+			});
+			return;
+		}
 		if (transfer.expiry < Date.now()) {
 			res.status(422).json({
 				error: {

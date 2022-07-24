@@ -1,4 +1,4 @@
-const INTERVAL = 5 * 60 * 1000 // 5 min
+const INTERVAL = 10 * 60 * 1000 // 10 min
 
 const Account = require('../models/account');
 const Transfer = require('../models/transfer');
