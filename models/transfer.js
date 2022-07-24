@@ -5,9 +5,7 @@ const dataSchema = new mongoose.Schema({
 	receiver_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
 	receiver_name: {type: String},
 	currency: {type: String},
-	settlement_date: {type: Date, required: true},
-	settlement_name: {type: String, required: true},
-	settlement_status: {type: String, default: 'WAITING'}, // WAITING | DONE
+	settlement_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Settlement'},
 	amount: {type: Number},
 	items: [{
 		name: {type: String},

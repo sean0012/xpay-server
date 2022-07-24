@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const Account = require('../models/account');
 const Transfer = require('../models/transfer');
+const Settlement = require('../models/settlement');
 const passport = require('passport');
 const Util = require('../util');
 
@@ -48,6 +49,7 @@ router.get('/trade_hist',
 			payer_signature: transfer.payer_signature,
 			created_at: new Date(transfer.createdAt).getTime(),
 			payment_time: new Date(transfer.payment_time).getTime(),
+			settlement_id: transfer.settlement_id,
 		}));
 
 		res.json({
@@ -133,6 +135,7 @@ router.post('/pamt_init',
 				return;
 			}
 		}
+		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').select('_id').exec();
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
 		const code = await Util.generateDynamicCode();
@@ -143,9 +146,7 @@ router.post('/pamt_init',
 			receiver_id: req.user._id,
 			receiver_name: req.user.merchant_name,
 			currency: 'MRF.KRW',
-			settlement_date: (new Date('2022-07-31T00:00:00')).getTime(),
-			settlement_name: '7월',
-			settlement_status: 'WAITING',
+			settlement_id: upcomingSettlement._id,
 			amount: amount,
 			items: req.body.items,
 			fee: amount * feeRate,
