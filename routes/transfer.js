@@ -49,7 +49,7 @@ router.get('/trade_hist',
 			payer_signature: transfer.payer_signature,
 			created_at: new Date(transfer.createdAt).getTime(),
 			payment_time: new Date(transfer.payment_time).getTime(),
-			settlement_id: transfer.settlement_id,
+			settlement: transfer.settlement,
 		}));
 
 		res.json({
@@ -136,6 +136,15 @@ router.post('/pamt_init',
 			}
 		}
 		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').select('_id').exec();
+		if (!upcomingSettlement) {
+			res.status(400).json({
+				error: {
+					code: 'SETTLEMENT_NOT_FOUND',
+					message: 'No available upcoming settlement'
+				}
+			});
+			return;
+		}
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
 		const code = await Util.generateDynamicCode();
@@ -146,7 +155,12 @@ router.post('/pamt_init',
 			receiver_id: req.user._id,
 			receiver_name: req.user.merchant_name,
 			currency: 'MRF.KRW',
-			settlement_id: upcomingSettlement._id,
+			settlement: {
+				start_date: upcomingSettlement.start_date,
+				end_date: upcomingSettlement.end_date,
+				date: upcomingSettlement.date,
+				done: upcomingSettlement.done,
+			},
 			amount: amount,
 			items: req.body.items,
 			fee: amount * feeRate,

@@ -4,7 +4,6 @@ const dataSchema = new mongoose.Schema({
 	start_date: {type: Date, unique: true},
 	end_date: {type: Date, unique: true},
 	date: {type: Date, unique: true},
-	name: {type: String},
 	done: {type: Boolean, default: false},
 });
 
