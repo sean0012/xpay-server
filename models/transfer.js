@@ -6,8 +6,6 @@ const dataSchema = new mongoose.Schema({
 	receiver_name: {type: String},
 	currency: {type: String},
 	settlement: {
-		start_date: {type: Date},
-		end_date: {type: Date},
 		date: {type: Date},
 		done: {type: Boolean, default: false},
 	},

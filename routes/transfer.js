@@ -156,8 +156,6 @@ router.post('/pamt_init',
 			receiver_name: req.user.merchant_name,
 			currency: 'MRF.KRW',
 			settlement: {
-				start_date: upcomingSettlement.start_date,
-				end_date: upcomingSettlement.end_date,
 				date: upcomingSettlement.date,
 				done: upcomingSettlement.done,
 			},
