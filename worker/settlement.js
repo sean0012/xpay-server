@@ -7,9 +7,8 @@ const Settlement = require('../models/settlement');
 const check = async () => {
 	const thisSettlement = await Settlement.findOne({done: false}).sort('date').exec();
 	const timestamp = new Date();
-	console.log('this:',thisSettlement.date, timestamp)
 
-	if (timestamp > thisSettlement.date) {
+	if (thisSettlement && timestamp > thisSettlement.date) {
 		console.log('Process Settlement');
 		thisSettlement.done = true;
 		await thisSettlement.save();
