@@ -135,7 +135,7 @@ router.post('/pamt_init',
 				return;
 			}
 		}
-		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').select('_id').exec();
+		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
 		if (!upcomingSettlement) {
 			res.status(400).json({
 				error: {
