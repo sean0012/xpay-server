@@ -26,9 +26,12 @@ const check = async () => {
 			} else {
 				receiverObject[t.receiver_id] = [];
 			}
+
+			const payerPointsGained = t.payer_points_gained ? t.payer_points_gained : 0;
+
 			receiverObject[t.receiver_id].push({
 				amount: t.amount,
-				payer_points_gained:t.payer_points_gained,
+				payer_points_gained: payerPointsGained,
 			});
 		});
 		console.log('receiverObject:',receiverObject);
@@ -37,17 +40,23 @@ const check = async () => {
 			const receiver = receiverObject[id];
 			let amountSum = 0;
 			let pointSum = 0;
+
 			receiver.forEach(r => {
 				amountSum += r.amount;
 				pointSum += r.payer_points_gained;
 			});
+
 			const merchant = await Account.findOneAndUpdate(
-				{_id: id},
+				{ _id: id },
 				{
-					$inc: { withdrawable: amountSum + pointSum},
+					$inc: { withdrawable: amountSum + pointSum },
 					points: 0,
 				}
 			).exec();
+
+			if (!merchant) {
+				console.error('Account update failed:', id, merchant);
+			}
 		}
 	}
 
