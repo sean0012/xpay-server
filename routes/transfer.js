@@ -218,7 +218,7 @@ router.post('/pamt_init_refresh',
 			return;
 		}
 		const timestamp = Date.now();
-		const expiry = new Date(timestamp + QR_EXPIRE);
+		const expiry = new Date(timestamp + Config.QR_EXPIRE);
 		transfer.expiry = expiry;
 		transfer.createdAt = new Date(timestamp);
 
@@ -400,6 +400,7 @@ router.post('/pamt_comp',
 			transfer.payer_points_using = +req.body.payer_points_using;
 		}
 		req.user.token_balance -= amountToDeductFromPayer;
+		req.user.payment_thismonth += amountToDeductFromPayer;
 		const updatedUser = await req.user.save();
 
 		const inc = {token_balance: transfer.amount};

@@ -1,4 +1,4 @@
-const INTERVAL = 10 * 60 * 1000 // 10 min
+const INTERVAL = 10 * 60 * 1000; // 10 min
 
 const Account = require('../models/account');
 const Transfer = require('../models/transfer');
@@ -9,16 +9,26 @@ const check = async () => {
 	const timestamp = new Date();
 
 	if (thisSettlement && timestamp > thisSettlement.date) {
-		console.log('Process Settlement');
+		console.log('Process Settlement', new Date());
 		thisSettlement.done = true;
-		await thisSettlement.save();
+		const savedSettlement = await thisSettlement.save();
+		console.log('saved settlement:', savedSettlement);
 
 		const paidTransfers = await Transfer.find({
 			status: 'PAID',
-			settlement_id: thisSettlement._id,
+			'settlement.done': false,
+			'settlement.date': thisSettlement.date,
 		}).lean();
 
-		console.log('count:',paidTransfers.length);
+		const updatedTransfers = await Transfer.updateMany({
+			status: 'PAID',
+			'settlement.done': false,
+			'settlement.date': thisSettlement.date,
+		}, { 'settlement.done': true });
+
+		console.log('paidTransfers:',paidTransfers.length);
+		console.log('updated:', updatedTransfers.matchedCount, updatedTransfers.modifiedCount, updatedTransfers.acknowledged);
+
 		const receiverObject = {};
 		paidTransfers.map(t => {
 			if (t.receiver_id in receiverObject) {

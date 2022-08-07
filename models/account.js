@@ -26,6 +26,8 @@ const dataSchema = new mongoose.Schema({
 	merchant_name: {required: false, type: String},
 	merchant_fee_rate: {required: false, type: Number},
 	merchant_points_rate: {required: false, type: Number},
+	payment_thismonth: {required: true, type: Number, default: 0},
+	payment_nextmonth: {required: true, type: Number, default: 0},
 });
 
 module.exports = mongoose.model('Account', dataSchema);

@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 const Version = require('../models/version');
 const Account = require('../models/account');
-
+const Settlement = require('../models/settlement');
 const passport = require('passport');
 
 // 초기화면 앱 구동 버전 체크
@@ -123,6 +123,9 @@ router.post('/registration', async (req, res) => {
 router.get('/status',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
+		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
+		const paymentDate = upcomingSettlement ? upcomingSettlement.date : '';
+
 		res.json({
 			wallet: req.user.wallet,
 			collateral_name: req.user.collateral_name,
@@ -141,6 +144,10 @@ router.get('/status',
 			first_name: req.user.first_name,
 			last_name: req.user.last_name,
 			merchant_name: req.user.merchant_name,
+			withdrawable: req.user.withdrawable,
+			deposit: req.user.deposit,
+			payment_date: paymentDate,
+			payment_now: req.user.payment_thismonth,
 		});
 	}
 );
