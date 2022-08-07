@@ -1,5 +1,6 @@
 const Config = require('../config');
 
+const mongoose = require('mongoose');
 const jwt = require('jwt-simple');
 const express = require('express');
 const router = express.Router();
@@ -198,6 +199,15 @@ router.post('/pamt_init_refresh',
 			});
 			return;
 		}
+		if (!mongoose.Types.ObjectId.isValid(req.body.session_id)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter session_id is invalid'
+				}
+			});
+			return;
+		}
 		const transfer = await Transfer.findOne({_id: req.body.session_id}).exec();
 		if (!transfer) {
 			res.status(400).json({
@@ -314,6 +324,15 @@ router.post('/pamt_comp',
 				error: {
 					code: 'MISSING_REQUIRED_PARAMS',
 					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		if (!mongoose.Types.ObjectId.isValid(req.body.session_id)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter session_id is invalid'
 				}
 			});
 			return;
