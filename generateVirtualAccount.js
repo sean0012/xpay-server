@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const mongoString = process.env.DATABASE_URL;
-const DynamicCode = require('./models/dynamic_code');
+const VirtualAccount = require('./models/virtual_account');
 const { generateRandomNumber } = require('./util');
 
 mongoose.connect(mongoString);
@@ -14,20 +14,20 @@ database.on('error', (error) => {
 database.once('connected', () => {
 	console.log('Database Connected');
 
-	const codes = DynamicCode.find({}, function(err, docs) {
+	const codes = VirtualAccount.find({}, function(err, docs) {
 		if (docs.length) {
+			console.log('VirtualAccount:',docs.length);
 			database.close();
-			console.log('codes:',docs.length)
 		} else {
-			const pool = generateRandomNumber(4, 1);
-			const docs = pool.map(code => ({
-				code: code,
+			const pool = generateRandomNumber(6, 100);
+			const docs = pool.map(bank_account => ({
+				bank_account: bank_account,
 				used: false,
 			}));
 
-			DynamicCode.insertMany(docs, (error, results) => {
-				console.log('error:',error)
-				console.log('docs:',results)
+			VirtualAccount.insertMany(docs, (error, results) => {
+				console.log('error:',error);
+				console.log('docs:',results);
 
 				database.close();
 			});

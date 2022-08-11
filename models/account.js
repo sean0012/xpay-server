@@ -20,7 +20,7 @@ const dataSchema = new mongoose.Schema({
 	grade: {required: true, type: Number, default: 3}, // 회원등급 0~9 (0:사용불가, 1:사용중지, 3~정상)
 	fcm_token: {required: false, type: String},
 	geolocation: {required: false, type: String},
-	user_type: {required: true, type: String, default: 'INDIVIDUAL'}, // INDIVIDUAL | MERCHANT
+	user_type: {required: true, type: String, uppercase: true, default: 'INDIVIDUAL'}, // INDIVIDUAL | MERCHANT | ADMIN
 	last_name: {required: false, type: String},
 	first_name: {required: false, type: String},
 	merchant_name: {required: false, type: String},
