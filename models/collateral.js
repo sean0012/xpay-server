@@ -8,6 +8,7 @@ const dataSchema = new mongoose.Schema({
 	ex_market: {type: String, uppercase: true},
 	dynamic_code: {type: String, required: false},
 	expiry: {type: Date},
+	status: {type: String, uppercase: true}, // INIT | DONE
 }, { timestamps: true });
 
 module.exports = mongoose.model('Collaterals', dataSchema);

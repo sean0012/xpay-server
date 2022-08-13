@@ -23,6 +23,8 @@ const dataSchema = new mongoose.Schema({
 	user_type: {required: true, type: String, uppercase: true, default: 'INDIVIDUAL'}, // INDIVIDUAL | MERCHANT | ADMIN
 	last_name: {required: false, type: String},
 	first_name: {required: false, type: String},
+	v_bank: {require: false, type: String},
+	v_bank_account: {required: false, type: String},
 	merchant_name: {required: false, type: String},
 	merchant_fee_rate: {required: false, type: Number},
 	merchant_points_rate: {required: false, type: Number},

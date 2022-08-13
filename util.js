@@ -21,6 +21,16 @@ const generateDynamicCode = async () => {
 	return code.code;
 };
 
+const generateVirtualBankAccountNumber = async () => {
+	const VirtualAccount = require('./models/virtual_account');
+
+	const accountNumber = await VirtualAccount.findOneAndUpdate(
+		{used: false},
+		{$set: {used: true}},
+	).exec();
+	return accountNumber.bank_account;
+};
+
 const generateApprovalId = () => {
 	const random3Digits = Math.floor(Math.random()*(999-100+1)+100);
 	const timestampLast6Digits = Date.now().toString().slice(6);
@@ -49,4 +59,10 @@ const generateRandomNumber = (digits, gap = 1) => {
 	return pool;	
 }
 
-module.exports = { checkPrice, generateDynamicCode, generateApprovalId, generateRandomNumber };
+module.exports = {
+	checkPrice,
+	generateDynamicCode,
+	generateApprovalId,
+	generateRandomNumber,
+	generateVirtualBankAccountNumber,
+};

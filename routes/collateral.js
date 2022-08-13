@@ -96,6 +96,7 @@ router.post('/cltr_init',
 			ex_market: req.body.ex_market,
 			dynamic_code: code,
 			expiry: expiry,
+			status: 'INIT',
 		});
 		const created = await newCollateral.save();
 		if (created) {
@@ -226,6 +227,79 @@ router.post('/cltr_cont',
 			collateral_price: collateral.collateral_price,
 			collateral: collateralValue,
 		});
+	}
+);
+
+router.post('/cltr_comp',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.session_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		if (!mongoose.Types.ObjectId.isValid(req.body.session_id)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter session_id is invalid'
+				}
+			});
+			return;
+		}
+
+		const params = {
+			_id: req.body.session_id,
+		};
+		const collateral = await Collateral.findOne(params).exec();
+		if (!collateral) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (collateral.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Expired'
+				}
+			});
+			return;
+		}
+
+		//save
+		const virtualAccount = await Util.generateVirtualBankAccountNumber();
+		req.user.v_bank = '기업은행';
+		req.user.v_bank_account = virtualAccount;
+		req.user.collateral_amount += collateral.collateral_amount;
+		req.user.collateral += collateral.collateral;
+		const updatedUser = await req.user.save();
+
+
+		collateral.status = 'DONE';
+		collateral.account_id = req.user._id;
+		collateral.payer_signature = req.body.payer_signature;
+
+		const updatedCollateral = await collateral.save();
+		if (updatedCollateral) {
+			res.json({
+				result: 'OK'
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_COLLATERAL_ERROR',
+				message: 'Error occured while updating collateral'
+			});
+		}
 	}
 );
 
