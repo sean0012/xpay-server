@@ -23,7 +23,7 @@ router.get('/cltr_hist',
 	}
 );
 
-// 담보
+// 담보 제공
 router.post('/cltr_init',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
@@ -110,6 +110,122 @@ router.post('/cltr_init',
 				message: 'Error occured while creating collateral'
 			});
 		}
+	}
+);
+
+// 담보 제공 리프레시
+router.post('/cltr_init_refresh',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.session_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		if (!mongoose.Types.ObjectId.isValid(req.body.session_id)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter session_id is invalid'
+				}
+			});
+			return;
+		}
+		const collateral = await Collateral.findOne({_id: req.body.session_id}).exec();
+		if (!collateral) {
+			res.status(400).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Collateral id not found ${req.body.session_id}`
+				}
+			});
+			return;
+		}
+		if (collateral.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+		const timestamp = Date.now();
+		const expiry = new Date(timestamp + Config.QR_EXPIRE);
+		collateral.expiry = expiry;
+		collateral.createdAt = new Date(timestamp);
+
+		const code = await Util.generateDynamicCode();
+		collateral.dynamic_code = code;
+
+		const updated = await collateral.save();
+		if (updated) {
+			res.json({
+				session_id: updated._id,
+				dynamic_code: updated.dynamic_code,
+				expire: updated.expiry.getTime(),
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_COLLATERAL_ERROR',
+				message: 'Error occured while updating collateral'
+			});
+		}
+	}
+);
+
+router.post('/cltr_cont',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.dynamic_code) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter dynamic_code is required'
+				}
+			});
+			return;
+		}
+
+		const params = {
+			dynamic_code: req.body.dynamic_code,
+		};
+		const collateral = await Collateral.findOne(params).exec();
+		if (!collateral) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (collateral.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Expired'
+				}
+			});
+			return;
+		}
+
+		const collateralValue = Math.floor(collateral.collateral_amount * collateral.collateral_price * 0.7);
+
+		res.json({
+			session_id: collateral._id,
+			ex_market: collateral.ex_market,
+			collateral_name: collateral.collateral_name,
+			collateral_amount: collateral.collateral_amount,
+			collateral_price: collateral.collateral_price,
+			collateral: collateralValue,
+		});
 	}
 );
 
