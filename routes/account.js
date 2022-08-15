@@ -6,6 +6,7 @@ const router = express.Router();
 const Version = require('../models/version');
 const Account = require('../models/account');
 const Settlement = require('../models/settlement');
+const MarketPrice = require('../models/market_price');
 const passport = require('passport');
 
 // 초기화면 앱 구동 버전 체크
@@ -150,6 +151,8 @@ router.get('/status',
 			deposit: req.user.deposit,
 			payment_date: paymentDate,
 			payment_now: req.user.payment_thismonth,
+			v_bank: req.user.v_bank,
+			v_bank_account: req.user.v_bank_account,
 		});
 	}
 );

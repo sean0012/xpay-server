@@ -56,6 +56,15 @@ router.post('/obank_cashin',
 			});
 			return;
 		}
+		if (!req.body.bank_name) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter bank_name is required'
+				}
+			});
+			return;
+		}
 		if (!req.body.bank_account) {
 			res.status(400).json({
 				error: {
@@ -65,7 +74,10 @@ router.post('/obank_cashin',
 			});
 			return;
 		}
-		const accountByBankAccount = await Account.findOne({v_bank_account:req.body.bank_account}).exec();
+		const accountByBankAccount = await Account.findOne({
+			v_bank: req.body.bank_name,
+			v_bank_account: req.body.bank_account,
+		}).exec();
 		if (!accountByBankAccount) {
 			res.status(400).json({
 				error: {
@@ -79,7 +91,7 @@ router.post('/obank_cashin',
 		const newLedger = new Ledger({
 			amount: amount,
 			title: amount > 0 ? '은행이체 수입' : '은행계좌 지출',
-			bank: {
+			banking: {
 				name: req.body.bank_cs_name,
 				amount: amount,
 				bank_account: req.body.bank_account,
