@@ -8,7 +8,7 @@ const setRoutes = (app) => {
 	app.use('/api/v1/account', account);
 	app.use('/api/v1/trade', transfer);
 	app.use('/api/v1/settlement', settlement);
-	app.use('/api/v1/ledger', ledger);
+	app.use('/api/v1/banking', ledger);
 	app.use('/api/v1/cltr', collateral);
 	app.use((req, res, next) => {
 		res.status(404).json({

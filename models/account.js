@@ -6,9 +6,7 @@ const dataSchema = new mongoose.Schema({
 	auth_token: {required: true, type: String},
 	collateral_name: {required: true, type: String},
 	collateral_amount: {required: true, type: Number},
-	collateral_price: {required: true, type: Number},
-	collateral: {required: true, type: Number},
-	collateral_balance: {required: true, type: Number},
+	collateral_balance: {required: true, type: Number, default: 0}, // 담보코인 해제가능 수량
 	collateral_liquidation: {required: true, type: Number},
 	token_name: {required: true, type: String},
 	token_limit: {required: true, type: Number, default: 0},

@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const Account = require('../models/account');
 const Collateral = require('../models/collateral');
+const MarketPrice = require('../models/market_price');
 const passport = require('passport');
 const Util = require('../util');
 
@@ -55,17 +56,7 @@ router.post('/cltr_init',
 			});
 			return;
 		}
-		if (!req.body.collateral_price) {
-			res.status(400).json({
-				error: {
-					code: 'MISSING_REQUIRED_PARAMS',
-					message: 'Parameter collateral_price is required'
-				}
-			});
-			return;
-		}
 		const collateralAmount = Number(req.body.collateral_amount);
-		const collateralPrice = Number(req.body.collateral_price);
 		if (isNaN(collateralAmount)) {
 			res.status(400).json({
 				error: {
@@ -75,24 +66,16 @@ router.post('/cltr_init',
 			});
 			return;
 		}
-		if (isNaN(collateralPrice)) {
-			res.status(400).json({
-				error: {
-					code: 'INVALID_PARAMS',
-					message: 'Parameter collateral_price is not a number'
-				}
-			});
-			return;
-		}
 
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
 		const code = await Util.generateDynamicCode();
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
 
 		const newCollateral = new Collateral({
 			collateral_name: req.body.collateral_name,
 			collateral_amount: collateralAmount,
-			collateral_price: collateralPrice,
+			collateral_price: +collateralPrice.close,
 			ex_market: req.body.ex_market,
 			dynamic_code: code,
 			expiry: expiry,
@@ -217,14 +200,16 @@ router.post('/cltr_cont',
 			return;
 		}
 
-		const collateralValue = Math.floor(collateral.collateral_amount * collateral.collateral_price * 0.7);
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+		const price = +collateralPrice.close;
+		const collateralValue = Math.floor(collateral.collateral_amount * price * 0.7);
 
 		res.json({
 			session_id: collateral._id,
 			ex_market: collateral.ex_market,
 			collateral_name: collateral.collateral_name,
 			collateral_amount: collateral.collateral_amount,
-			collateral_price: collateral.collateral_price,
+			collateral_price: price,
 			collateral: collateralValue,
 		});
 	}
@@ -281,9 +266,7 @@ router.post('/cltr_comp',
 		req.user.v_bank = '기업은행';
 		req.user.v_bank_account = virtualAccount;
 		req.user.collateral_amount += collateral.collateral_amount;
-		req.user.collateral += collateral.collateral;
 		const updatedUser = await req.user.save();
-
 
 		collateral.status = 'DONE';
 		collateral.account_id = req.user._id;

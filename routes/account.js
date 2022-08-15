@@ -92,7 +92,6 @@ router.post('/registration', async (req, res) => {
 			auth_token: auth_token,
 			collateral_name: 'MRF',
 			collateral_amount: 0,
-			collateral_price: 1000,
 			collateral: 0,
 			collateral_balance: 0,
 			collateral_liquidation: 0,
@@ -125,13 +124,16 @@ router.get('/status',
 	async (req, res) => {
 		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
 		const paymentDate = upcomingSettlement ? upcomingSettlement.date : '';
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+		const price = +collateralPrice.close;
+		const collateralValue = req.user.collateral_amount * price;
 
 		res.json({
 			wallet: req.user.wallet,
 			collateral_name: req.user.collateral_name,
 			collateral_amount: req.user.collateral_amount,
-			collateral_price: req.user.collateral_price,
-			collateral: req.user.collateral,
+			collateral_price: price,
+			collateral: collateralValue,
 			collateral_balance: req.user.collateral_balance,
 			collateral_liquidation: req.user.collateral_liquidation,
 			token_name: req.user.token_name,

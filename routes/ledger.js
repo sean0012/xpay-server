@@ -3,6 +3,7 @@ const Config = require('../config');
 const express = require('express');
 const router = express.Router();
 const Ledger = require('../models/ledger');
+const Account = require('../models/account');
 const passport = require('passport');
 
 router.get('/list',
@@ -24,7 +25,7 @@ router.get('/list',
 	}
 );
 
-router.post('/pay',
+router.post('/obank_cashin',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		if (req.user.user_type !== 'ADMIN') {
@@ -64,12 +65,22 @@ router.post('/pay',
 			});
 			return;
 		}
+		const accountByBankAccount = await Account.findOne({v_bank_account:req.body.bank_account}).exec();
+		if (!accountByBankAccount) {
+			res.status(400).json({
+				error: {
+					code: 'ACCOUNT_NOT_FOUND',
+					message: 'Virtual Bank Account not found'
+				}
+			});
+			return;
+		}
 
 		const newLedger = new Ledger({
 			amount: amount,
 			title: amount > 0 ? '은행이체 수입' : '은행계좌 지출',
 			bank: {
-				name: req.body.name,
+				name: req.body.bank_cs_name,
 				amount: amount,
 				bank_account: req.body.bank_account,
 				bank_name: req.body.bank_name,
@@ -80,6 +91,15 @@ router.post('/pay',
 
 		res.json({
 			result: 'OK'
+		});
+	}
+);
+
+router.post('/cashout',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		res.json({
+			result: 'OK' // NOT_ENOUGH_BALANCE
 		});
 	}
 );
