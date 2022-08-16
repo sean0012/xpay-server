@@ -30,7 +30,9 @@ const check = async () => {
 		console.log('updated:', updatedTransfers.matchedCount, updatedTransfers.modifiedCount, updatedTransfers.acknowledged);
 
 		const receiverObject = {};
+		const payers = new Set();
 		paidTransfers.map(t => {
+			payers.add(t.sender_id);
 			if (t.receiver_id in receiverObject) {
 
 			} else {
@@ -67,6 +69,17 @@ const check = async () => {
 			if (!merchant) {
 				console.error('Account update failed:', id, merchant);
 			}
+		}
+
+		for (const payer of payers) {
+			const payerAccount = await Account.findOneAndUpdate(
+				{ _id: payer._id },
+				{
+					$inc: { deposit: -payerAccount.payment_thismonth },
+					payment_thismonth: payerAccount.payment_nextmonth,
+					payment_nextmonth: 0,
+				}
+			).exec();
 		}
 	}
 

@@ -262,10 +262,18 @@ router.post('/cltr_comp',
 		}
 
 		//save
-		const virtualAccount = await Util.generateVirtualBankAccountNumber();
-		req.user.v_bank = '기업은행';
-		req.user.v_bank_account = virtualAccount;
+		if (req.user.v_bank_account === '' || req.user.v_bank_account === null || req.user.v_bank_account === undefined) {
+			const virtualAccount = await Util.generateVirtualBankAccountNumber();
+			req.user.v_bank = '기업은행';
+			req.user.v_bank_account = virtualAccount;
+		}
 		req.user.collateral_amount += collateral.collateral_amount;
+
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+		const price = +collateralPrice.close;
+		const collateralValue = Math.floor(collateral.collateral_amount * price * 0.7);
+		req.user.token_limit += collateralValue;
+		req.user.token_balance += collateralValue;
 		const updatedUser = await req.user.save();
 
 		collateral.status = 'DONE';

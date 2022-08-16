@@ -11,6 +11,7 @@ const dataSchema = new mongoose.Schema({
 		bank_account: {type: String},
 		printed_content: {type: String},
 	},
+	account_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Ledger', dataSchema);

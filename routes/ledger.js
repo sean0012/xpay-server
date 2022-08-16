@@ -88,6 +88,9 @@ router.post('/obank_cashin',
 			return;
 		}
 
+		accountByBankAccount.deposit += amount;
+		const accountSaved = await accountByBankAccount.save();
+
 		const newLedger = new Ledger({
 			amount: amount,
 			title: amount > 0 ? '은행이체 수입' : '은행계좌 지출',
@@ -98,6 +101,7 @@ router.post('/obank_cashin',
 				bank_name: req.body.bank_name,
 				printed_content: req.body.printed_content,
 			},
+			account_id: accountByBankAccount._id,
 		});
 		const created = await newLedger.save();
 
