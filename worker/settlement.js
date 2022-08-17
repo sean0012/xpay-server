@@ -75,7 +75,7 @@ const check = async () => {
 			const payerAccount = await Account.findOneAndUpdate(
 				{ _id: payer._id },
 				{
-					$inc: { deposit: -payerAccount.payment_thismonth },
+					$inc: { deposit: -1 * payerAccount.payment_thismonth },
 					payment_thismonth: payerAccount.payment_nextmonth,
 					payment_nextmonth: 0,
 				}
