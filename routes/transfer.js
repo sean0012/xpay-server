@@ -378,8 +378,6 @@ router.post('/pamt_comp',
 			});
 			return;
 		}
-		console.log('user points:',req.user.points)
-		console.log('points using:', req.body.payer_points_using)
 		if (req.body.payer_points_using) {
 			const payerPointsUsing = Number(req.body.payer_points_using);
 			if (isNaN(payerPointsUsing)) {
@@ -422,14 +420,12 @@ router.post('/pamt_comp',
 		req.user.payment_thismonth += amountToDeductFromPayer;
 		const updatedUser = await req.user.save();
 
-		const inc = {token_balance: transfer.amount};
-		if (req.body.payer_points_using) {
-			inc.points = +req.body.payer_points_using;
-		}
+		let marchantGain = transfer.amount;
+		if (transfer.fee) marchantGain -= transfer.fee;
 
 		const merchant = await Account.findOneAndUpdate(
 			{_id: transfer.receiver_id},
-			{$inc: inc}
+			{$inc: {token_balance: marchantGain}}
 		).exec();
 		console.log('merchant findOneAndUpdate:',merchant)
 
