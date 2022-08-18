@@ -72,14 +72,11 @@ const check = async () => {
 		}
 
 		for (const payer of payers) {
-			const payerAccount = await Account.findOneAndUpdate(
-				{ _id: payer._id },
-				{
-					$inc: { deposit: -1 * payerAccount.payment_thismonth },
-					payment_thismonth: payerAccount.payment_nextmonth,
-					payment_nextmonth: 0,
-				}
-			).exec();
+			const payerAccount = await Account.findOne({_id: payer._id}).exec();
+			payerAccount.deposit = payerAccount.deposit - payerAccount.payment_thismonth;
+			payerAccount.payment_thismonth = payerAccount.payment_nextmonth;
+			payerAccount.payment_nextmonth = 0;
+			await payerAccount.save();
 		}
 	}
 
