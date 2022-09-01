@@ -514,4 +514,162 @@ router.post('/pamt_canc',
 	}
 );
 
+// 송금진행 대상
+router.post('/remi_init',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		if (!req.body.static_code) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter static_code is required'
+				}
+			});
+			return;
+		}
+
+		const keyword = req.body.static_code;
+
+		const accounts = await Account.find({
+			'$or': [
+				{'wallet': {'$regex': keyword, '$options': 'i'}},
+				{'phone': {'$regex': keyword, '$options': 'i'}},
+			]
+		}).limit(10).sort({
+			last_name: -1,
+			first_name: -1,
+		}).select({_id: 1, wallet: 1, phone: 1, first_name: 1, last_name: 1}).lean();
+
+		res.json({
+			peer_content: accounts
+		});
+	}
+);
+
+// 송금 승인
+router.post('/remi_comp',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		if (!req.body.wallet) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter wallet is required'
+				}
+			});
+			return;
+		}
+		if (!req.body.amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter amount is required'
+				}
+			});
+			return;
+		}
+		const amount = Number(req.body.amount);
+		if (isNaN(amount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter amount is not a number'
+				}
+			});
+			return;
+		}
+		let yesterday = new Date(date.getTime());
+		yesterday.setDate(date.getDate() - 1);
+		const past24hRemittance = await Transfer.findOne({
+			type: 'REMIT',
+			sender_id: req.user._id,
+			createdAt: { $lt: yesterday.toISOString() },
+		});
+		if (!past24hRemittance) {
+			res.status(422).json({
+				error: {
+					code: 'RATE_LIMIT_24H',
+					message: 'Remittance once only per 24h'
+				}
+			});
+			return;
+		}
+
+		req.user.token_balance -= amount;
+		const sender = await req.user.save();
+
+		const receiver = await Account.findOne({wallet: req.body.wallet}).exec();
+		receiver.token_balance += amount;
+		await receiver.save();
+		const receiverFullname = `${receiver.last_name} ${receiver.first_name}`;
+
+		const newRemittance = new Transfer({
+			sender_id: req.user._id,
+			receiver_id: receiver._id,
+			receiver_name: receiverFullname.trim(),
+			currency: 'MRF.KRW',
+			amount: amount,
+			type: 'REMIT',
+			memo: req.body.memo_message,
+			payer_signature: req.body.payer_signature,
+			payment_time: Date.now(),
+		});
+		const created = await newRemittance.save();
+		if (created) {
+			res.json({
+				wallet: created.wallet,
+				first_name: receiver.first_name,
+				last_name: receiver.last_name,
+				datetime: created.createdAt,
+			});
+		} else {
+			res.status(422).json({
+				code: 'CREATE_TRANSFER_ERROR',
+				message: 'Error occured while creating transfer'
+			});
+		}
+	}
+);
+
+// 송금 요청
+router.post('/remi_cnfm',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		if (!req.body.wallet) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter wallet is required'
+				}
+			});
+			return;
+		}
+		if (!req.body.amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter amount is required'
+				}
+			});
+			return;
+		}
+		const amount = Number(req.body.amount);
+		if (isNaN(amount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter amount is not a number'
+				}
+			});
+			return;
+		}
+		res.json({
+			wallet: req.body.wallet,
+			first_name: req.body.first_name,
+			last_name: req.body.last_name,
+			amount: req.body.amount,
+		});
+	}
+);
+
 module.exports = router;
