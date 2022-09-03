@@ -119,6 +119,45 @@ router.post('/registration', async (req, res) => {
 	}
 });
 
+router.post('/recovery', async (req, res) => {
+	if (!req.body.secret_hash) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_REQUIRED_PARAMS',
+				message: 'Parameter secret_hash is required'
+			}
+		});
+		return;
+	}
+
+	const account = await Account.findOne({secret_hash: req.body.secret_hash}).exec();
+	if (!account) {
+		res.status(400).json({
+			error: {
+				code: 'NOT_FOUND',
+				message: 'secret_hash not found'
+			}
+		});
+		return;
+	}
+
+	res.json({
+		result: 'OK',
+		last_name: account.last_name,
+		first_name: account.first_name,
+		birth_date: account.birth_date,
+		phone: account.phone,
+		email: account.email,
+		merchant_name: account.merchant_name,
+		business_registration: account.business_registration,
+		v_bank: account.v_bank,
+		v_bank_account: account.v_bank_account,
+		bank_name: account.bank_name,
+		bank_account: account.bank_account,
+		autotransfer: account.autotransfer,
+	});
+});
+
 // 지갑현황
 router.get('/status',
 	passport.authenticate('bearer', { session: false }),
