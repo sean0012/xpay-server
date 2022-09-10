@@ -32,6 +32,7 @@ const dataSchema = new mongoose.Schema({
 	merchant_points_rate: {required: false, type: Number},
 	payment_thismonth: {required: true, type: Number, default: 0},
 	payment_nextmonth: {required: true, type: Number, default: 0},
+	autotransfer: {type: Boolean},
 });
 
 module.exports = mongoose.model('Account', dataSchema);

@@ -143,6 +143,7 @@ router.post('/recovery', async (req, res) => {
 
 	res.json({
 		result: 'OK',
+		auth_token: account.auth_token,
 		last_name: account.last_name,
 		first_name: account.first_name,
 		birth_date: account.birth_date,
@@ -157,6 +158,35 @@ router.post('/recovery', async (req, res) => {
 		autotransfer: account.autotransfer,
 	});
 });
+
+// 한도변경신청
+router.post('/limitation', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	// validate params
+	if (!req.body.amount) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_REQUIRED_PARAMS',
+				message: 'Parameter amount is required'
+			}
+		});
+		return;
+	}
+	const amount = Number(req.body.amount);
+	if (isNaN(amount)) {
+		res.status(400).json({
+			error: {
+				code: 'INVALID_PARAMS',
+				message: 'Parameter amount is not a number'
+			}
+		});
+		return;
+	}
+
+	res.json({
+		result: 'OK',
+	});
+});
+
 
 // 지갑현황
 router.get('/status',
