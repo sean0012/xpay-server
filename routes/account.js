@@ -226,4 +226,79 @@ router.get('/status',
 	}
 );
 
+// 개인정보 정정
+router.patch('/modi_my', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	if (req.body.last_name) {
+		req.user.last_name = req.body.last_name;
+	}
+	if (req.body.first_name) {
+		req.user.first_name = req.body.first_name;
+	}
+	if (req.body.birth_date) {
+		req.user.birth_date = req.body.birth_date;
+	}
+	if (req.body.phone) {
+		req.user.phone = req.body.phone;
+	}
+	if (req.body.email) {
+		req.user.email = req.body.email;
+	}
+	if (req.body.address) {
+		req.user.address = req.body.address;
+	}
+	if (req.body.merchant_name) {
+		req.user.merchant_name = req.body.merchant_name;
+	}
+	if (req.body.business_registration) {
+		req.user.business_registration = req.body.business_registration;
+	}
+ 	const updatedUser = await req.user.save();
+ 	res.json({
+ 		first_name: updatedUser.first_name,
+		last_name: updatedUser.last_name,
+		birth_date: updatedUser.updatedUser,
+		merchant_name: updatedUser.merchant_name,
+		phone: updatedUser.phone,
+		email: updatedUser.email,
+		address: updatedUser.address,
+		merchant_name: updatedUser.merchant_name,
+		business_registration: updatedUser.business_registration,
+ 	});
+});
+
+// 은행정보 등록
+router.patch('/modi_bank', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	if (req.body.bank_cs_name) {
+		req.user.bank_cs_name = req.body.bank_cs_name;
+	}
+	if (req.body.bank_cs_birth) {
+		req.user.bank_cs_birth = req.body.bank_cs_birth;
+	}
+	if (req.body.bank_name) {
+		req.user.bank_name = req.body.bank_name;
+	}
+	if (req.body.bank_account) {
+		req.user.bank_account = req.body.bank_account;
+	}
+ 	const updatedUser = await req.user.save();
+ 	res.json({
+ 		bank_cs_name: updatedUser.bank_cs_name,
+		bank_cs_birth: updatedUser.bank_cs_birth,
+		bank_name: updatedUser.bank_name,
+		bank_account: updatedUser.bank_account,
+ 	});
+});
+
+// 자동인출 설정
+router.patch('/modi_aubanking', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	console.log('AUBANK:',req.body.autobanking);
+	if (req.body.autobanking) {
+		req.user.autobanking = req.body.autobanking.toUpperCase() === 'YES'
+	}
+ 	const updatedUser = await req.user.save();
+ 	res.json({
+ 		autobanking: updatedUser.autobanking
+ 	});
+});
+
 module.exports = router;
