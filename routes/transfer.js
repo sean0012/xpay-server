@@ -14,22 +14,30 @@ const Util = require('../util');
 router.get('/trade_hist',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
-		const transfers = await Transfer.find({
+		const filter = {
 			'$or': [
 				{sender_id: req.user._id},
 				{receiver_id: req.user._id},
 			]
-		},
-		{},
-		{
-			sort: {
-				createdAt: -1,
-			}
+		};
+		if (req.query.continue) {
+			filter._id = {
+				'$lt': req.query.continue
+			};
+		}
+		const transfers = await Transfer.find(filter,	{},	{
+			sort: {createdAt: -1},
+			limit: 20,
 		}).lean();
 
-		const trades = transfers.map(transfer => ({
+		const data = transfers.map(transfer => ({
 			session_id: transfer._id,
-			merchant_name: transfer.receiver_name,
+			payee: {
+				name: transfer.receiver_name,
+				address: transfer.receiver_address,
+				registration: transfer.receiver_registration,
+				phone: transfer.receiver_phone,
+			},
 			currency: transfer.currency,
 			amount: transfer.amount,
 			items: transfer.items.map(item => ({
@@ -39,22 +47,22 @@ router.get('/trade_hist',
 				quantity: +item.quantity,
 			})),
 			fee: transfer.fee,
-			dynamic_code: transfer.dynamic_code,
-			expiry: new Date(transfer.expiry).getTime(),
+			//dynamic_code: transfer.dynamic_code,
+			//expiry: new Date(transfer.expiry).getTime(),
 			type: transfer.type,
 			status: transfer.status,
 			approval_id: transfer.approval_id,
 			payer_points_using: transfer.payer_points_using,
 			payer_points_gained: transfer.payer_points_gained,
 			memo: transfer.memo,
-			payer_signature: transfer.payer_signature,
+			//payer_signature: transfer.payer_signature,
 			created_at: new Date(transfer.createdAt).getTime(),
 			payment_time: new Date(transfer.payment_time).getTime(),
-			settlement: transfer.settlement,
+			settlement: transfer.settlement
 		}));
 
 		res.json({
-			trades,
+			data,
 		});
 	}
 );
@@ -81,21 +89,21 @@ router.get('/point_hist',
 			}
 		}).lean();
 
-		const trades = transfers.map(transfer => ({
+		const data = transfers.map(transfer => ({
 			session_id: transfer._id,
 			currency: transfer.currency,
-			amount: transfer.amount,
+			//amount: transfer.amount,
 			title: transfer.receiver_name,
 			type: transfer.type,
 			status: transfer.status,
-			approval_id: transfer.approval_id,
 			payer_points_using: transfer.payer_points_using,
 			payer_points_gained: transfer.payer_points_gained,
 			payment_time: new Date(transfer.payment_time).getTime(),
 		}));
 
 		res.json({
-			trades,
+			point_balance: 0,
+			data,
 		});
 	}
 );
@@ -155,7 +163,10 @@ router.post('/pamt_init',
 		const newTransfer = new Transfer({
 			receiver_id: req.user._id,
 			receiver_name: req.user.merchant_name,
-			currency: 'MRF.KRW',
+			receiver_address: req.user.address,
+			receiver_registration: req.user.business_registration,
+			receiver_phone: req.user.phone,
+			currency: 'MKRW',
 			settlement: {
 				date: upcomingSettlement.date,
 				done: upcomingSettlement.done,
@@ -607,7 +618,7 @@ router.post('/remi_comp',
 			sender_id: req.user._id,
 			receiver_id: receiver._id,
 			receiver_name: receiverFullname.trim(),
-			currency: 'MRF.KRW',
+			currency: 'MKRW',
 			amount: amount,
 			type: 'REMIT',
 			memo: req.body.memo_message,

@@ -4,6 +4,9 @@ const dataSchema = new mongoose.Schema({
 	sender_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
 	receiver_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
 	receiver_name: {type: String},
+	receiver_address: {type: String},
+	receiver_registration: {type: String},
+	receiver_phone: {type: String},
 	currency: {type: String},
 	settlement: {
 		date: {type: Date},

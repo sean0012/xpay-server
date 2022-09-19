@@ -37,6 +37,7 @@ const dataSchema = new mongoose.Schema({
 	payment_thismonth: {required: true, type: Number, default: 0},
 	payment_nextmonth: {required: true, type: Number, default: 0},
 	autotransfer: {type: Boolean},
+	currency: {type: String},
 });
 
 module.exports = mongoose.model('Account', dataSchema);

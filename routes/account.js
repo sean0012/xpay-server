@@ -96,7 +96,7 @@ router.post('/registration', async (req, res) => {
 			collateral: 0,
 			collateral_balance: 0,
 			collateral_liquidation: 0,
-			token_name: 'MRF.KRW',
+			token_name: 'MKRW',
 			token_limit: 0,
 			token_using: 0,
 			token_balance: 0,
@@ -104,6 +104,8 @@ router.post('/registration', async (req, res) => {
 			deposit: 0,
 			points: 1000,
 			grade: 3,
+			currency: 'KRW',
+			fcm_token: req.body.fcm_token,
 		});
 		const created = await newAccount.save();
 		res.json({
@@ -140,6 +142,9 @@ router.post('/recovery', async (req, res) => {
 		});
 		return;
 	}
+
+	account.fcm_token = req.body.fcm_token;
+	await account.save();
 
 	res.json({
 		result: 'OK',
@@ -218,16 +223,18 @@ router.get('/status',
 			merchant_name: req.user.merchant_name,
 			withdrawable: req.user.withdrawable,
 			deposit: req.user.deposit,
-			payment_date: paymentDate,
+			payment_date: new Date(paymentDate).getTime(),
 			payment_now: req.user.payment_thismonth,
 			v_bank: req.user.v_bank,
 			v_bank_account: req.user.v_bank_account,
+			currency: req.user.currency,
 		});
 	}
 );
 
 // 개인정보 정정
 router.patch('/modi_my', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	console.log('modi_my', req.body)
 	if (req.body.last_name) {
 		req.user.last_name = req.body.last_name;
 	}
@@ -252,18 +259,18 @@ router.patch('/modi_my', passport.authenticate('bearer', { session: false }), as
 	if (req.body.business_registration) {
 		req.user.business_registration = req.body.business_registration;
 	}
- 	const updatedUser = await req.user.save();
- 	res.json({
- 		first_name: updatedUser.first_name,
+	const updatedUser = await req.user.save();
+	res.json({
+		first_name: updatedUser.first_name,
 		last_name: updatedUser.last_name,
-		birth_date: updatedUser.updatedUser,
+		birth_date: updatedUser.birth_date,
 		merchant_name: updatedUser.merchant_name,
 		phone: updatedUser.phone,
 		email: updatedUser.email,
 		address: updatedUser.address,
 		merchant_name: updatedUser.merchant_name,
 		business_registration: updatedUser.business_registration,
- 	});
+	});
 });
 
 // 은행정보 등록
@@ -280,9 +287,9 @@ router.patch('/modi_bank', passport.authenticate('bearer', { session: false }), 
 	if (req.body.bank_account) {
 		req.user.bank_account = req.body.bank_account;
 	}
- 	const updatedUser = await req.user.save();
- 	res.json({
- 		bank_cs_name: updatedUser.bank_cs_name,
+	const updatedUser = await req.user.save();
+	res.json({
+		bank_cs_name: updatedUser.bank_cs_name,
 		bank_cs_birth: updatedUser.bank_cs_birth,
 		bank_name: updatedUser.bank_name,
 		bank_account: updatedUser.bank_account,
@@ -291,14 +298,71 @@ router.patch('/modi_bank', passport.authenticate('bearer', { session: false }), 
 
 // 자동인출 설정
 router.patch('/modi_aubanking', passport.authenticate('bearer', { session: false }), async (req, res) => {
-	console.log('AUBANK:',req.body.autobanking);
 	if (req.body.autobanking) {
 		req.user.autobanking = req.body.autobanking.toUpperCase() === 'YES'
 	}
- 	const updatedUser = await req.user.save();
- 	res.json({
- 		autobanking: updatedUser.autobanking
- 	});
+	const updatedUser = await req.user.save();
+	res.json({
+		autobanking: updatedUser.autobanking
+	});
+});
+
+// 통화변경
+router.patch('/modi_currency', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	const currencies = ['KRW', 'USD'];
+
+	if (req.body.currency && currencies.includes(req.body.currency.toUpperCase())) {
+		req.user.currency = req.body.currency.toUpperCase();
+	} else {
+		res.status(400).json({
+			error: {
+				code: 'UNREGISTERED_CURRENCY',
+				message: `Available currencies: ${currencies.toString()}`,
+			}
+		});
+		return;
+	}
+	const updatedUser = await req.user.save();
+	res.json({
+		currency: updatedUser.currency
+	});
+});
+
+// 결제비번 변경
+router.patch('/modi_s_hash', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	if (!req.body.old_secret_hash) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_OLD_SECRET',
+				message: 'Required parameter old_secret_hash is missing'
+			}
+		});
+		return;
+	}
+	if (!req.body.new_secret_hash) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_NEW_SECRET',
+				message: 'Required parameter new_secret_hash is missing'
+			}
+		});
+		return;
+	}
+	if (req.body.old_secret_hash !== req.user.secret_hash) {
+		res.status(409).json({
+			error: {
+				code: 'WRONG_SECRET',
+				message: 'Parameter old_secret_hash does not match'
+			}
+		});
+		return;
+	}
+
+	req.user.secret_hash = req.body.new_secret_hash;
+	const updatedUser = await req.user.save();
+	res.json({
+		result: 'OK'
+	});
 });
 
 module.exports = router;
