@@ -596,7 +596,7 @@ router.post('/remi_comp',
 		const past24hRemittance = await Transfer.findOne({
 			type: 'REMIT',
 			sender_id: req.user._id,
-			createdAt: { $lt: yesterday.toISOString() },
+			createdAt: { $gt: yesterday.toISOString() },
 		});
 		if (!past24hRemittance) {
 			res.status(422).json({
