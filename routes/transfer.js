@@ -589,8 +589,10 @@ router.post('/remi_comp',
 			});
 			return;
 		}
-		let yesterday = new Date(date.getTime());
-		yesterday.setDate(date.getDate() - 1);
+		const today = new Date();
+		let yesterday = new Date(today);
+		yesterday.setDate(yesterday.getDate() - 1)
+
 		const past24hRemittance = await Transfer.findOne({
 			type: 'REMIT',
 			sender_id: req.user._id,
