@@ -596,9 +596,9 @@ router.post('/remi_comp',
 		const past24hRemittance = await Transfer.findOne({
 			type: 'REMIT',
 			sender_id: req.user._id,
-			createdAt: { $gt: yesterday.toISOString() },
+			createdAt: { $gt: yesterday },
 		});
-		if (!past24hRemittance) {
+		if (past24hRemittance) {
 			res.status(422).json({
 				error: {
 					code: 'RATE_LIMIT_24H',
@@ -612,6 +612,15 @@ router.post('/remi_comp',
 		const sender = await req.user.save();
 
 		const receiver = await Account.findOne({wallet: req.body.wallet}).exec();
+		if (!receiver) {
+			res.status(422).json({
+				error: {
+					code: 'WALLET_NOT_FOUND',
+					message: 'Wallet not found'
+				}
+			});
+			return;
+		}
 		receiver.token_balance += amount;
 		await receiver.save();
 		const receiverFullname = `${receiver.last_name} ${receiver.first_name}`;
@@ -672,6 +681,16 @@ router.post('/remi_cnfm',
 				error: {
 					code: 'INVALID_PARAMS',
 					message: 'Parameter amount is not a number'
+				}
+			});
+			return;
+		}
+		const receiver = await Account.findOne({wallet: req.body.wallet}).exec();
+		if (!receiver) {
+			res.status(422).json({
+				error: {
+					code: 'WALLET_NOT_FOUND',
+					message: 'Wallet not found'
 				}
 			});
 			return;
