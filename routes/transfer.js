@@ -108,6 +108,240 @@ router.get('/point_hist',
 	}
 );
 
+// 구매자 결제요청
+router.post('/pamt_dyna', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
+	if (!upcomingSettlement) {
+		res.status(400).json({
+			error: {
+				code: 'SETTLEMENT_NOT_FOUND',
+				message: 'No available upcoming settlement'
+			}
+		});
+		return;
+	}
+	const timestamp = Date.now();
+	const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
+	const code = await Util.generateDynamicCode();
+	const newTransfer = new Transfer({
+		sender_id: req.user._id,
+		currency: 'MKRW',
+		settlement: {
+			date: upcomingSettlement.date,
+			done: upcomingSettlement.done,
+		},
+		type: 'PAYMENT',
+		status: 'INIT',
+		dynamic_code: code,
+		expiry: expiry,
+	});
+	if (req.body.payer_points_using) {
+		const payerPointsUsing = Number(req.body.payer_points_using);
+		if (isNaN(payerPointsUsing)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter payer_points_using is not a number'
+				}
+			});
+			return;
+		} else {
+			newTransfer.payer_points_using = payerPointsUsing;
+		}
+	}
+	const created = await newTransfer.save();
+	if (created) {
+		res.json({
+			session_id: created._id,
+			dynamic_code: created.dynamic_code,
+			expire: created.expiry.getTime(),
+		});
+	}
+});
+
+// 구매자 결제 요청 리프레시
+router.post('/pamt_dyna_refresh',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.session_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		if (!mongoose.Types.ObjectId.isValid(req.body.session_id)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter session_id is invalid'
+				}
+			});
+			return;
+		}
+		const transfer = await Transfer.findOne({_id: req.body.session_id}).exec();
+		if (!transfer) {
+			res.status(400).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Transfer id not found ${req.body.session_id}`
+				}
+			});
+			return;
+		}
+		if (transfer.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+		const timestamp = Date.now();
+		const expiry = new Date(timestamp + Config.QR_EXPIRE);
+		transfer.expiry = expiry;
+		transfer.createdAt = new Date(timestamp);
+
+		const code = await Util.generateDynamicCode();
+		transfer.dynamic_code = code;
+
+		const updated = await transfer.save();
+		if (updated) {
+			res.json({
+				session_id: updated._id,
+				dynamic_code: updated.dynamic_code,
+				expire: updated.expiry.getTime(),
+			});
+		}
+	}
+);
+
+router.post('/pamt_cnfm',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.dynamic_code) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter dynamic_code is required'
+				}
+			});
+			return;
+		}
+
+		const params = {
+			dynamic_code: req.body.dynamic_code,
+		};
+		const transfer = await Transfer.findOne(params).exec();
+		if (!transfer) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Payment data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (transfer.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Payment status is ${transfer.status}`
+				}
+			});
+			return;
+		}
+		if (transfer.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+		if (!req.body.amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter amount is required'
+				}
+			});
+			return;
+		}
+		const amount = Number(req.body.amount);
+		if (isNaN(amount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter amount is not a number'
+				}
+			});
+			return;
+		}
+		if (req.body.items) {
+			const valid = Util.checkPrice(amount, req.body.items);
+			if (!valid) {
+				res.status(400).json({
+					error: {
+						code: 'INVALID_PRICE',
+						message: 'Items price * quantity !== amount'
+					}
+				});
+				return;
+			}
+		}
+
+		const feeRate = req.user.merchant_fee_rate ? req.user.merchant_fee_rate : Config.DEFAULT_FEE_RATE;
+		const pointsRate = req.user.merchant_points_rate ? req.user.merchant_points_rate : Config.DEFAULT_POINTS_RATE;
+
+		transfer.receiver_id = req.user._id;
+		transfer.receiver_name = req.user.merchant_name;
+		transfer.receiver_address = req.user.address;
+		transfer.receiver_registration = req.user.business_registration;
+		transfer.receiver_phone = req.user.phone;
+		transfer.amount = amount;
+		transfer.items = req.body.items;
+		transfer.fee = amount * feeRate;
+		transfer.payer_points_gained = amount * feeRate * pointsRate;
+
+
+		/////////////////////
+		const payer = await Account.findOne({_id: transfer.sender_id}).exec();
+		let amountToDeductFromPayer = transfer.amount;
+		if (transfer.payer_points_using) {
+			amountToDeductFromPayer -= transfer.payer_points_using;
+			payer.points -= transfer.payer_points_using;
+		}
+		payer.token_balance -= amountToDeductFromPayer;
+		payer.payment_thismonth += amountToDeductFromPayer;
+		const updatedPayer = await payer.save();
+
+		let marchantGain = transfer.amount;
+		if (transfer.fee) marchantGain -= transfer.fee;
+
+		req.user.token_balance += marchantGain;
+		const updatedUser = await req.user.save();
+
+		transfer.approval_id = Util.generateApprovalId();
+		transfer.status = 'PAID';
+		transfer.sender_id = req.user._id;
+		transfer.memo = req.body.memo_message;
+		transfer.payer_signature = req.body.payer_signature;
+		transfer.payment_time = Date.now();
+
+		res.json({
+			session_id: transfer._id,
+		});
+	}
+);
+////////////////////
+
 // 결제 요청
 router.post('/pamt_init',
 	passport.authenticate('bearer', { session: false }),
