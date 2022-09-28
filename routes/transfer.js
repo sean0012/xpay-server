@@ -336,7 +336,7 @@ router.post('/pamt_cnfm',
 		transfer.payment_time = Date.now();
 
 		res.json({
-			session_id: transfer._id,
+			result: 'OK',
 		});
 	}
 );
