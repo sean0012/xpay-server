@@ -297,21 +297,6 @@ router.post('/pamt_cnfm',
 			}
 		}
 
-		const feeRate = req.user.merchant_fee_rate ? req.user.merchant_fee_rate : Config.DEFAULT_FEE_RATE;
-		const pointsRate = req.user.merchant_points_rate ? req.user.merchant_points_rate : Config.DEFAULT_POINTS_RATE;
-
-		transfer.receiver_id = req.user._id;
-		transfer.receiver_name = req.user.merchant_name;
-		transfer.receiver_address = req.user.address;
-		transfer.receiver_registration = req.user.business_registration;
-		transfer.receiver_phone = req.user.phone;
-		transfer.amount = amount;
-		transfer.items = req.body.items;
-		transfer.fee = amount * feeRate;
-		transfer.payer_points_gained = amount * feeRate * pointsRate;
-
-
-		/////////////////////
 		const payer = await Account.findOne({_id: transfer.sender_id}).exec();
 		let amountToDeductFromPayer = transfer.amount;
 		if (transfer.payer_points_using) {
@@ -328,19 +313,35 @@ router.post('/pamt_cnfm',
 		req.user.token_balance += marchantGain;
 		const updatedUser = await req.user.save();
 
+		const feeRate = req.user.merchant_fee_rate ? req.user.merchant_fee_rate : Config.DEFAULT_FEE_RATE;
+		const pointsRate = req.user.merchant_points_rate ? req.user.merchant_points_rate : Config.DEFAULT_POINTS_RATE;
+
+		transfer.receiver_id = req.user._id;
+		transfer.receiver_name = req.user.merchant_name;
+		transfer.receiver_address = req.user.address;
+		transfer.receiver_registration = req.user.business_registration;
+		transfer.receiver_phone = req.user.phone;
+		transfer.amount = amount;
+		transfer.items = req.body.items;
+		transfer.fee = amount * feeRate;
+		transfer.payer_points_gained = amount * feeRate * pointsRate;
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
-		transfer.sender_id = req.user._id;
-		transfer.memo = req.body.memo_message;
-		transfer.payer_signature = req.body.payer_signature;
 		transfer.payment_time = Date.now();
 
-		res.json({
-			result: 'OK',
-		});
+		const updatedTransfer = await transfer.save();
+		if (updatedTransfer) {
+			res.json({
+				result: 'OK'
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_TRANSFER_ERROR',
+				message: 'Error occured while updating transfer'
+			});
+		}
 	}
 );
-////////////////////
 
 // 결제 요청
 router.post('/pamt_init',
