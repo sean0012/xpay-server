@@ -297,22 +297,6 @@ router.post('/pamt_cnfm',
 			}
 		}
 
-		const payer = await Account.findOne({_id: transfer.sender_id}).exec();
-		let amountToDeductFromPayer = transfer.amount;
-		if (transfer.payer_points_using) {
-			amountToDeductFromPayer -= transfer.payer_points_using;
-			payer.points -= transfer.payer_points_using;
-		}
-		payer.token_balance -= amountToDeductFromPayer;
-		payer.payment_thismonth += amountToDeductFromPayer;
-		const updatedPayer = await payer.save();
-
-		let marchantGain = transfer.amount;
-		if (transfer.fee) marchantGain -= transfer.fee;
-
-		req.user.token_balance += marchantGain;
-		const updatedUser = await req.user.save();
-
 		const feeRate = req.user.merchant_fee_rate ? req.user.merchant_fee_rate : Config.DEFAULT_FEE_RATE;
 		const pointsRate = req.user.merchant_points_rate ? req.user.merchant_points_rate : Config.DEFAULT_POINTS_RATE;
 
@@ -325,6 +309,24 @@ router.post('/pamt_cnfm',
 		transfer.items = req.body.items;
 		transfer.fee = amount * feeRate;
 		transfer.payer_points_gained = amount * feeRate * pointsRate;
+
+		const payer = await Account.findOne({_id: transfer.sender_id}).exec();
+		let amountToDeductFromPayer = amount;
+
+		if (transfer.payer_points_using) {
+			amountToDeductFromPayer -= transfer.payer_points_using;
+			payer.points -= transfer.payer_points_using;
+		}
+		payer.token_balance -= amountToDeductFromPayer;
+		payer.payment_thismonth += amountToDeductFromPayer;
+		const updatedPayer = await payer.save();
+
+		let marchantGain = amount;
+		if (transfer.fee) marchantGain -= transfer.fee;
+
+		req.user.token_balance += marchantGain;
+		const updatedUser = await req.user.save();
+
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
 		transfer.payment_time = Date.now();
