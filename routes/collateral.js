@@ -226,9 +226,9 @@ router.post('/cltr_cont',
 			session_id: collateral._id,
 			ex_market: collateral.ex_market,
 			collateral_name: collateral.collateral_name,
-			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : undefined,
-			collateral_price: price ? price.toString() : undefined,
-			collateral: collateralValue ? collateralValue.toString() : undefined,
+			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : '0',
+			collateral_price: price ? price.toString() : '0',
+			collateral: collateralValue ? collateralValue.toString() : '0',
 		});
 	}
 );
