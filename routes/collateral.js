@@ -14,12 +14,30 @@ const Util = require('../util');
 router.get('/cltr_hist',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
-		const collaterals = await Collateral.find({
-			account_id: req.user._id,
-		}, {}, { sort: { createdAt: -1 }}).lean();
+		const filter = {account_id: req.user._id};
+		if (req.query.continue) {
+			filter._id = {
+				'$lt': req.query.continue
+			};
+		}
+
+		const collaterals = await Collateral.find(filter, {}, {
+			sort: {createdAt: -1},
+			limit: 20,
+		}).lean();
+		console.log('collaterals:',collaterals);
+
+		const cltr_hist = collaterals.map(collateral => ({
+			date: new Date(collateral.createdAt).getTime(),
+			collateral_name: collateral.collateral_name,
+			token_name: 'MKRW',
+			ex_market: collateral.ex_market,
+			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : undefined,
+			collateral_rls_amount: collateral.collateral_amount && collateral.collateral_price ? (collateral.collateral_amount * collateral.collateral_price).toString() : undefined,
+		}));
 
 		res.json({
-			cltr_hist: collaterals
+			cltr_hist,
 		})
 	}
 );
@@ -208,9 +226,9 @@ router.post('/cltr_cont',
 			session_id: collateral._id,
 			ex_market: collateral.ex_market,
 			collateral_name: collateral.collateral_name,
-			collateral_amount: collateral.collateral_amount,
-			collateral_price: price,
-			collateral: collateralValue,
+			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : undefined,
+			collateral_price: price ? price.toString() : undefined,
+			collateral: collateralValue ? collateralValue.toString() : undefined,
 		});
 	}
 );
