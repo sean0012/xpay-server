@@ -192,6 +192,44 @@ router.post('/limitation', passport.authenticate('bearer', { session: false }), 
 	});
 });
 
+// 사용자현황 (local 저장용)
+router.get('/static',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
+		const paymentDate = upcomingSettlement ? upcomingSettlement.date : '';
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+		const price = +collateralPrice.close;
+		const collateralValue = req.user.collateral_amount * price;
+
+		res.json({
+			wallet: req.user.wallet,
+			user_type: req.user.user_type,
+			first_name: req.user.first_name,
+			last_name: req.user.last_name,
+			merchant_name: req.user.merchant_name,
+			birth_date: req.user.birth_date,
+			v_bank: req.user.v_bank,
+			v_bank_account: req.user.v_bank_account,
+			phone: req.user.phone,
+			email: req.user.email,
+			address: req.user.address,
+			business_registration: req.user.business_registration,
+			business_category: req.user.business_category,
+			bank_cs_name: req.user.bank_cs_name,
+			bank_cs_birth: req.user.bank_cs_birth,
+			bank_name: req.user.bank_name,
+			bank_account: req.user.bank_account,
+			settlement_date: new Date(paymentDate).getTime(),
+			settlement_period: '30',
+			autotransfer: req.user.autotransfer ? 'YES' : 'NO',
+			exchange_rate: "1.02",
+			fee: req.user.merchant_fee_rate ? req.user.merchant_fee_rate.toString() : '0',
+			merchant_points_offer: req.user.merchant_points_rate ? req.user.merchant_points_rate.toString() : '0',
+		});
+	}
+);
+
 
 // 지갑현황
 router.get('/status',
@@ -210,23 +248,20 @@ router.get('/status',
 			collateral_price: price ? price.toString() : '0',
 			collateral: collateralValue ? collateralValue.toString() : '0',
 			collateral_balance: req.user.collateral_balance ? req.user.collateral_balance.toString() : '0',
-			collateral_liquidation: req.user.collateral_liquidation ? req.user.collateral_liquidation.toString() : undefined,
+			collateral_liquidation: req.user.collateral_liquidation ? req.user.collateral_liquidation.toString() : '0',
 			token_name: req.user.token_name,
 			token_limit: req.user.token_limit ? req.user.token_limit.toString() : undefined,
 			token_using: req.user.token_using ? req.user.token_using.toString() : undefined,
 			token_balance: req.user.token_balance ? req.user.token_balance.toString() : undefined,
-			points: req.user.points ? req.user.points.toString() : '0',
-			grade: req.user.grade ? req.user.grade.toString() : undefined,
-			user_type: req.user.user_type,
-			first_name: req.user.first_name,
-			last_name: req.user.last_name,
-			merchant_name: req.user.merchant_name,
 			withdrawable: req.user.withdrawable ? req.user.withdrawable.toString() : '0',
 			deposit: req.user.deposit ? req.user.deposit.toString() : '0',
-			payment_date: new Date(paymentDate).getTime(),
-			payment_now: req.user.payment_thismonth ? req.user.payment_thismonth.toString() : '0',
-			v_bank: req.user.v_bank,
-			v_bank_account: req.user.v_bank_account,
+			points: req.user.points ? req.user.points.toString() : '0',
+			grade: req.user.grade ? req.user.grade.toString() : undefined,
+			remit_date: new Date(0).getTime(),
+			remit_count: '0',
+			remit_limit: '100000',
+			repayment_date: new Date(paymentDate).getTime(),
+			repayment_now: req.user.payment_thismonth ? req.user.payment_thismonth.toString() : '0',
 			currency: req.user.currency,
 		});
 	}
@@ -299,11 +334,11 @@ router.patch('/modi_bank', passport.authenticate('bearer', { session: false }), 
 // 자동인출 설정
 router.patch('/modi_aubanking', passport.authenticate('bearer', { session: false }), async (req, res) => {
 	if (req.body.autobanking) {
-		req.user.autobanking = req.body.autobanking.toUpperCase() === 'YES'
+		req.user.autotransfer = req.body.autobanking.toUpperCase() === 'YES'
 	}
 	const updatedUser = await req.user.save();
 	res.json({
-		autobanking: updatedUser.autobanking
+		autobanking: updatedUser.autotransfer
 	});
 });
 

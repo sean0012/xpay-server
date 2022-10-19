@@ -22,6 +22,7 @@ const dataSchema = new mongoose.Schema({
 	last_name: {required: false, type: String},
 	first_name: {required: false, type: String},
 	phone: {required: false, type: String},
+	address: {type: String},
 	v_bank: {require: false, type: String},
 	v_bank_account: {required: false, type: String},
 	bank_cs_name: {required: false, type: String},
@@ -31,6 +32,7 @@ const dataSchema = new mongoose.Schema({
 	birth_date: {required: false, type: String},
 	email: {required: false, type: String},
 	business_registration: {required: false, type: String},
+	business_category: {type: String},
 	merchant_name: {required: false, type: String},
 	merchant_fee_rate: {required: false, type: Number},
 	merchant_points_rate: {required: false, type: Number},
@@ -38,6 +40,6 @@ const dataSchema = new mongoose.Schema({
 	payment_nextmonth: {required: true, type: Number, default: 0},
 	autotransfer: {type: Boolean},
 	currency: {type: String},
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Account', dataSchema);
