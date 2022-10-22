@@ -15,9 +15,9 @@ router.get('/cltr_hist',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		const filter = {account_id: req.user._id};
-		if (req.query.continue) {
+		if (req.query.last_session_id) {
 			filter._id = {
-				'$lt': req.query.continue
+				'$lt': req.query.last_session_id
 			};
 		}
 
@@ -28,6 +28,7 @@ router.get('/cltr_hist',
 		console.log('collaterals:',collaterals);
 
 		const cltr_hist = collaterals.map(collateral => ({
+			session_id: collateral._id,
 			date: new Date(collateral.createdAt).getTime(),
 			collateral_name: collateral.collateral_name,
 			token_name: 'MKRW',
@@ -36,7 +37,10 @@ router.get('/cltr_hist',
 			collateral_rls_amount: collateral.collateral_amount && collateral.collateral_price ? (collateral.collateral_amount * collateral.collateral_price).toString() : undefined,
 		}));
 
+		const last_session_id = cltr_hist.length && cltr_hist[cltr_hist.length - 1].session_id;
+
 		res.json({
+			last_session_id,
 			cltr_hist,
 		})
 	}

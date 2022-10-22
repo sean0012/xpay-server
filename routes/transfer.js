@@ -99,9 +99,9 @@ router.get('/trade_hist',
 		const last_session_id = data.length && data[data.length - 1].session_id;
 
 		res.json({
-			data,
 			total_amount,
 			last_session_id,
+			data,
 		});
 	}
 );
@@ -122,6 +122,30 @@ router.get('/point_hist',
 			],
 		};
 		if (paramStatus) filter.status = paramStatus;
+		if (req.query.last_session_id) {
+			filter._id = {
+				'$lt': req.query.last_session_id
+			};
+		}
+		if (req.query.whence) {
+			if (req.query.whence.length !== 6) {
+				res.status(400).json({
+					error: {
+						code: 'INVALID_WHENCE',
+						message: 'Parameter whence must be YYYYMM format'
+					}
+				});
+				return;
+			}
+			const year = req.query.whence.substring(0, 4);
+			const month = req.query.whence.substring(4);
+			const fromDate = moment([year, Number(month) - 1]);
+			const toDate = moment(fromDate).add(1, 'month');
+			filter.payment_time = {
+				'$gte': fromDate,
+				'$lt': toDate
+			};
+		}
 		const transfers = await Transfer.find(filter, {}, {
 			sort: {
 				createdAt: -1,
@@ -140,8 +164,11 @@ router.get('/point_hist',
 			trade_datetime: new Date(transfer.payment_time).getTime(),
 		}));
 
+		const last_session_id = data.length && data[data.length - 1].session_id;
+
 		res.json({
 			point_balance: '0',
+			last_session_id,
 			data,
 		});
 	}
