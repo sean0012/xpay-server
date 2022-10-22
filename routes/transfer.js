@@ -21,6 +21,13 @@ router.get('/trade_hist',
 				{receiver_id: req.user._id},
 			]
 		};
+
+		let type = 'PAYMENT';
+		if (req.query.type) {
+			type = req.query.type.toUpperCase();
+			filter.type = type;
+		}
+
 		if (req.query.last_session_id) {
 			filter._id = {
 				'$lt': req.query.last_session_id
@@ -52,10 +59,8 @@ router.get('/trade_hist',
 			for (let t of wholeMonthTransfers) {
 				total_amount += t.amount;
 			}
-			// console.log('wholeMonthFilter:', wholeMonthFilter);
-			// console.log('wholeMonthTransfers:', wholeMonthTransfers);
+			total_amount = total_amount.toString();
 		}
-		//console.log('filter:',filter)
 		const transfers = await Transfer.find(filter,	{},	{
 			sort: {createdAt: -1},
 			limit: 20,
@@ -68,6 +73,7 @@ router.get('/trade_hist',
 				address: transfer.receiver_address,
 				registration: transfer.receiver_registration,
 				phone: transfer.receiver_phone,
+				wallet: transfer.receiver_wallet,
 			},
 			currency: transfer.currency,
 			amount: transfer.amount ? transfer.amount.toString() : '0',
@@ -78,15 +84,13 @@ router.get('/trade_hist',
 				quantity: item.quantity ? item.quantity.toString() : undefined,
 			})) : [],
 			fee: transfer.fee ? transfer.fee.toString() : '0',
-			//dynamic_code: transfer.dynamic_code,
-			//expiry: new Date(transfer.expiry).getTime(),
 			type: transfer.type,
 			status: transfer.status,
 			approval_id: transfer.approval_id,
+			payer_wallet: transfer.wallet,
 			payer_points_using: transfer.payer_points_using ? transfer.payer_points_using.toString() : '0',
 			payer_points_gained: transfer.payer_points_gained ? transfer.payer_points_gained.toString() : '0',
 			memo: transfer.memo,
-			//payer_signature: transfer.payer_signature,
 			created_at: new Date(transfer.createdAt).getTime(),
 			trade_datetime: new Date(transfer.payment_time).getTime(),
 			settlement: transfer.settlement
@@ -160,6 +164,7 @@ router.post('/pamt_dyna', passport.authenticate('bearer', { session: false }), a
 	const code = await Util.generateDynamicCode();
 	const newTransfer = new Transfer({
 		sender_id: req.user._id,
+		sender_wallet: req.user.wallet,
 		currency: 'MKRW',
 		settlement: {
 			date: upcomingSettlement.date,
@@ -434,6 +439,7 @@ router.post('/pamt_init',
 
 		const newTransfer = new Transfer({
 			receiver_id: req.user._id,
+			receiver_wallet: req.user.wallet,
 			receiver_name: req.user.merchant_name,
 			receiver_address: req.user.address,
 			receiver_registration: req.user.business_registration,
@@ -715,6 +721,7 @@ router.post('/pamt_comp',
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
 		transfer.sender_id = req.user._id;
+		transfer.sender_wallet = req.user.wallet;
 		transfer.memo = req.body.memo_message;
 		transfer.payer_signature = req.body.payer_signature;
 		transfer.payment_time = Date.now();
@@ -899,7 +906,9 @@ router.post('/remi_comp',
 
 		const newRemittance = new Transfer({
 			sender_id: req.user._id,
+			sender_wallet: req.user.wallet,
 			receiver_id: receiver._id,
+			receiver_wallet: receiver.wallet,
 			receiver_name: receiverFullname.trim(),
 			currency: 'MKRW',
 			amount: amount,

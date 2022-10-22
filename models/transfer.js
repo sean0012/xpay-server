@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
 	sender_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
+	sender_wallet: {type: String},
 	receiver_id: {type: mongoose.Schema.Types.ObjectId, ref: 'Account'},
+	receiver_wallet: {type: String},
 	receiver_name: {type: String},
 	receiver_address: {type: String},
 	receiver_registration: {type: String},
