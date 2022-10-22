@@ -9,6 +9,7 @@ const Transfer = require('../models/transfer');
 const Settlement = require('../models/settlement');
 const passport = require('passport');
 const Util = require('../util');
+const moment = require('moment');
 
 // 거래 내역
 router.get('/trade_hist',
@@ -20,11 +21,41 @@ router.get('/trade_hist',
 				{receiver_id: req.user._id},
 			]
 		};
-		if (req.query.continue) {
+		if (req.query.last_session_id) {
 			filter._id = {
-				'$lt': req.query.continue
+				'$lt': req.query.last_session_id
 			};
 		}
+		let total_amount = null;
+		if (req.query.whence) {
+			if (req.query.whence.length !== 6) {
+				res.status(400).json({
+					error: {
+						code: 'INVALID_WHENCE',
+						message: 'Parameter whence must be YYYYMM format'
+					}
+				});
+				return;
+			}
+			const year = req.query.whence.substring(0, 4);
+			const month = req.query.whence.substring(4);
+			const fromDate = moment([year, Number(month) - 1]);
+			const toDate = moment(fromDate).add(1, 'month');
+			filter.payment_time = {
+				'$gte': fromDate,
+				'$lt': toDate
+			};
+
+			const {_id, ...wholeMonthFilter} = filter;
+			const wholeMonthTransfers = await Transfer.find(wholeMonthFilter).select({'_id': 0, 'amount': 1}).lean();
+			total_amount = 0;
+			for (let t of wholeMonthTransfers) {
+				total_amount += t.amount;
+			}
+			// console.log('wholeMonthFilter:', wholeMonthFilter);
+			// console.log('wholeMonthTransfers:', wholeMonthTransfers);
+		}
+		//console.log('filter:',filter)
 		const transfers = await Transfer.find(filter,	{},	{
 			sort: {createdAt: -1},
 			limit: 20,
@@ -57,12 +88,16 @@ router.get('/trade_hist',
 			memo: transfer.memo,
 			//payer_signature: transfer.payer_signature,
 			created_at: new Date(transfer.createdAt).getTime(),
-			payment_time: new Date(transfer.payment_time).getTime(),
+			trade_datetime: new Date(transfer.payment_time).getTime(),
 			settlement: transfer.settlement
 		}));
 
+		const last_session_id = data.length && data[data.length - 1].session_id;
+
 		res.json({
 			data,
+			total_amount,
+			last_session_id,
 		});
 	}
 );
