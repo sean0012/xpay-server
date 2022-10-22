@@ -137,7 +137,7 @@ router.get('/point_hist',
 			status: transfer.status,
 			payer_points_using: transfer.payer_points_using ? transfer.payer_points_using.toString() : '0',
 			payer_points_gained: transfer.payer_points_gained ? transfer.payer_points_gained.toString() : '0',
-			payment_time: new Date(transfer.payment_time).getTime(),
+			trade_datetime: new Date(transfer.payment_time).getTime(),
 		}));
 
 		res.json({
@@ -923,7 +923,7 @@ router.post('/remi_comp',
 				wallet: created.wallet,
 				first_name: receiver.first_name,
 				last_name: receiver.last_name,
-				datetime: created.createdAt,
+				datetime: created.createdAt.getTime(),
 			});
 		} else {
 			res.status(422).json({
