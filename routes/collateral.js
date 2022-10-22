@@ -9,6 +9,7 @@ const Collateral = require('../models/collateral');
 const MarketPrice = require('../models/market_price');
 const passport = require('passport');
 const Util = require('../util');
+const moment = require('moment');
 
 // 담보 내역
 router.get('/cltr_hist',
@@ -18,6 +19,25 @@ router.get('/cltr_hist',
 		if (req.query.last_session_id) {
 			filter._id = {
 				'$lt': req.query.last_session_id
+			};
+		}
+		if (req.query.whence) {
+			if (req.query.whence.length !== 6) {
+				res.status(400).json({
+					error: {
+						code: 'INVALID_WHENCE',
+						message: 'Parameter whence must be YYYYMM format'
+					}
+				});
+				return;
+			}
+			const year = req.query.whence.substring(0, 4);
+			const month = req.query.whence.substring(4);
+			const fromDate = moment([year, Number(month) - 1]);
+			const toDate = moment(fromDate).add(1, 'month');
+			filter.createdAt = {
+				'$gte': fromDate,
+				'$lt': toDate
 			};
 		}
 

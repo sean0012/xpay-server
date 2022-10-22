@@ -5,21 +5,43 @@ const router = express.Router();
 const Ledger = require('../models/ledger');
 const Account = require('../models/account');
 const passport = require('passport');
+const moment = require('moment');
 
 router.get('/list',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
-		if (req.user.user_type !== 'ADMIN') {
-			res.status(403).json({
-				error: {
-					code: 'FORBIDDEN',
-					message: `Forbidden`
-				}
-			});
-			return;
+		const filter = {account_id: req.user._id};
+		if (req.query.last_session_id) {
+			filter._id = {
+				'$lt': req.query.last_session_id
+			};
 		}
-		const ledgers = await Ledger.find().lean();
+		if (req.query.whence) {
+			if (req.query.whence.length !== 6) {
+				res.status(400).json({
+					error: {
+						code: 'INVALID_WHENCE',
+						message: 'Parameter whence must be YYYYMM format'
+					}
+				});
+				return;
+			}
+			const year = req.query.whence.substring(0, 4);
+			const month = req.query.whence.substring(4);
+			const fromDate = moment([year, Number(month) - 1]);
+			const toDate = moment(fromDate).add(1, 'month');
+			filter.createdAt = {
+				'$gte': fromDate,
+				'$lt': toDate
+			};
+		}
+		const ledgers = await Ledger.find(filter,	{},	{
+			sort: {createdAt: -1},
+			limit: 20,
+		}).lean();
+		const last_session_id = ledgers.length && ledgers[ledgers.length - 1].session_id;
 		res.json({
+			last_session_id,
 			ledgers: ledgers,
 		});
 	}
