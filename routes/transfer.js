@@ -87,7 +87,7 @@ router.get('/trade_hist',
 			type: transfer.type,
 			status: transfer.status,
 			approval_id: transfer.approval_id,
-			payer_wallet: transfer.wallet,
+			payer_wallet: transfer.sender_wallet,
 			payer_points_using: transfer.payer_points_using ? transfer.payer_points_using.toString() : '0',
 			payer_points_gained: transfer.payer_points_gained ? transfer.payer_points_gained.toString() : '0',
 			memo: transfer.memo,
@@ -372,6 +372,7 @@ router.post('/pamt_cnfm',
 		transfer.receiver_address = req.user.address;
 		transfer.receiver_registration = req.user.business_registration;
 		transfer.receiver_phone = req.user.phone;
+		transfer.receiver_wallet = req.user.wallet;
 		transfer.amount = amount;
 		transfer.items = req.body.items;
 		transfer.fee = amount * feeRate;
@@ -909,6 +910,15 @@ router.post('/remi_comp',
 				error: {
 					code: 'RATE_LIMIT_24H',
 					message: 'Remittance once only per 24h'
+				}
+			});
+			return;
+		}
+		if (req.body.wallet === req.user.wallet) {
+			res.status(400).json({
+				error: {
+					code: 'SELF_REMITTANCE',
+					message: 'Self remittance'
 				}
 			});
 			return;
