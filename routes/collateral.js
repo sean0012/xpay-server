@@ -252,6 +252,8 @@ router.post('/cltr_cont',
 			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : '0',
 			collateral_price: price ? price.toString() : '0',
 			collateral: collateralValue ? collateralValue.toString() : '0',
+			token_name: 'MKRW',
+			token_limit: '10000',
 		});
 	}
 );
