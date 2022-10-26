@@ -1036,8 +1036,6 @@ router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), as
 	const group = {
 		'_id': {
 			'date': {'$dateToString': {'format': '%Y%m%d', 'date': '$payment_time'}},
-			'category': '$category',
-			'type': '$type',
 		},
 		'amount': {'$sum': '$amount'},
 	};
@@ -1048,8 +1046,6 @@ router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), as
 		{'$project': {
 			'_id': 0,
 			'date': '$_id.date',
-			'category': '$_id.category',
-			'type': '$_id.type',
 			'amount': '$amount',
 		}},
 		{'$sort': {'date': 1}},
