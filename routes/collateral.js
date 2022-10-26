@@ -248,6 +248,7 @@ router.post('/cltr_cont',
 		res.json({
 			session_id: collateral._id,
 			ex_market: collateral.ex_market,
+			offer_date: new Date().getTime(),
 			collateral_name: collateral.collateral_name,
 			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : '0',
 			collateral_price: price ? price.toString() : '0',
