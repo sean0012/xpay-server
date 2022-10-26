@@ -1046,7 +1046,7 @@ router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), as
 		{'$project': {
 			'_id': 0,
 			'date': '$_id.date',
-			'amount': '$amount',
+			'amount': {'$toString': '$amount'},
 		}},
 		{'$sort': {'date': 1}},
 	]);
@@ -1078,7 +1078,7 @@ router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), as
 			'date': '$_id.date',
 			'category': '$_id.category',
 			'type': '$_id.type',
-			'amount': '$amount',
+			'amount': {'$toString': '$amount'},
 		}},
 		{'$sort': {'date': 1}},
 	]);
