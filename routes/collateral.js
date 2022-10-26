@@ -67,7 +67,7 @@ router.get('/cltr_hist',
 );
 
 // 담보 제공
-router.post('/cltr_init',
+router.post('/cltr_dyna',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
@@ -140,7 +140,7 @@ router.post('/cltr_init',
 );
 
 // 담보 제공 리프레시
-router.post('/cltr_init_refresh',
+router.post('/cltr_dyna_refresh',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
@@ -257,7 +257,7 @@ router.post('/cltr_cont',
 	}
 );
 
-router.post('/cltr_comp',
+router.post('/cltr_chck',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
