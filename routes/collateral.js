@@ -45,7 +45,6 @@ router.get('/cltr_hist',
 			sort: {createdAt: -1},
 			limit: 20,
 		}).lean();
-		console.log('collaterals:',collaterals);
 
 		const cltr_hist = collaterals.map(collateral => ({
 			session_id: collateral._id,
