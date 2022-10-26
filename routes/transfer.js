@@ -373,6 +373,7 @@ router.post('/pamt_cnfm',
 		transfer.receiver_registration = req.user.business_registration;
 		transfer.receiver_phone = req.user.phone;
 		transfer.receiver_wallet = req.user.wallet;
+		transfer.category = req.user.business_category;
 		transfer.amount = amount;
 		transfer.items = req.body.items;
 		transfer.fee = amount * feeRate;
@@ -472,6 +473,7 @@ router.post('/pamt_init',
 			receiver_address: req.user.address,
 			receiver_registration: req.user.business_registration,
 			receiver_phone: req.user.phone,
+			category: req.user.business_category,
 			currency: 'MKRW',
 			settlement: {
 				date: upcomingSettlement.date,
@@ -1021,5 +1023,75 @@ router.post('/remi_cnfm',
 		});
 	}
 );
+
+router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	const fromDateMoment = moment().subtract(2, 'months').format('YYYY-MM');
+	const fromDate = new Date(fromDateMoment);
+	const match = {
+		'$and': [
+			{sender_id: req.user._id},
+			{payment_time: {'$gte': fromDate}}
+		]
+	};
+	const group = {
+		'_id': {
+			'date': {'$dateToString': {'format': '%Y%m%d', 'date': '$payment_time'}},
+			'category': '$category',
+			'type': '$type',
+		},
+		'amount': {'$sum': '$amount'},
+	};
+
+	const daily = await Transfer.aggregate([
+		{'$match': match},
+		{'$group': group},
+		{'$project': {
+			'_id': 0,
+			'date': '$_id.date',
+			'category': '$_id.category',
+			'type': '$_id.type',
+			'amount': '$amount',
+		}},
+		{'$sort': {'date': 1}},
+	]);
+
+	const data = {};
+	data.daily = daily;
+
+	const fromDateMoment2 = moment().subtract(1, 'months').format('YYYY-MM');
+	const fromDate2 = new Date(fromDateMoment2);
+	const match2 = {
+		'$and': [
+			{sender_id: req.user._id},
+			{payment_time: {'$gte': fromDate2}},
+		]
+	};
+	const group2 = {
+		'_id': {
+			'date': {'$dateToString': {'format': '%Y%m', 'date': '$payment_time'}},
+			'category': '$category',
+			'type': '$type',
+		},
+		'amount': {'$sum': '$amount'},
+	};
+	const monthly = await Transfer.aggregate([
+		{'$match': match2},
+		{'$group': group2},
+		{'$project': {
+			'_id': 0,
+			'date': '$_id.date',
+			'category': '$_id.category',
+			'type': '$_id.type',
+			'amount': '$amount',
+		}},
+		{'$sort': {'date': 1}},
+	]);
+	data.monthly = monthly;
+
+	res.json({
+		data,
+	});
+});
+
 
 module.exports = router;

@@ -24,6 +24,7 @@ const dataSchema = new mongoose.Schema({
 	fee: {type: Number},
 	dynamic_code: {type: String, required: false},
 	expiry: {type: Date},
+	category: {type: String}, // Account.business_category
 	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
 	status: {type: String}, // INIT | CANCELED | PAID | EXPIRED
 	approval_id: {type: String, required: false}, // 9 digits number
