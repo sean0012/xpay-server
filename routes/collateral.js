@@ -54,6 +54,7 @@ router.get('/cltr_hist',
 			ex_market: collateral.ex_market,
 			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : undefined,
 			collateral_rls_amount: collateral.collateral_amount && collateral.collateral_price ? (collateral.collateral_amount * collateral.collateral_price).toString() : undefined,
+			approval_id: collateral.approval_id,
 		}));
 
 		const last_session_id = cltr_hist.length && cltr_hist[cltr_hist.length - 1].session_id;
@@ -66,7 +67,7 @@ router.get('/cltr_hist',
 );
 
 // 담보 제공
-router.post('/cltr_dyna',
+router.post('/cltr_init',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
@@ -107,6 +108,16 @@ router.post('/cltr_dyna',
 			});
 			return;
 		}
+		if (!req.body.offer_date) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter offer_date is required'
+				}
+			});
+			return;
+		}
+		const offerDate = new Date(req.body.offer_date);
 
 		const timestamp = Date.now();
 		const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
@@ -118,6 +129,102 @@ router.post('/cltr_dyna',
 			collateral_amount: collateralAmount,
 			collateral_price: +collateralPrice.close,
 			ex_market: req.body.ex_market,
+			offer_date: offerDate,
+			dynamic_code: code,
+			expiry: expiry,
+			status: 'INIT',
+		});
+		const created = await newCollateral.save();
+		if (created) {
+			res.json({
+				session_id: created._id,
+				dynamic_code: created.dynamic_code,
+				expire: created.expiry.getTime(),
+			});
+		} else {
+			res.status(422).json({
+				code: 'CREATE_COLLATERAL_ERROR',
+				message: 'Error occured while creating collateral'
+			});
+		}
+	}
+);
+
+// 담보 제공 리프레시
+router.post('/cltr_init_refresh',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.session_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		if (!mongoose.Types.ObjectId.isValid(req.body.session_id)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter session_id is invalid'
+				}
+			});
+			return;
+		}
+		const collateral = await Collateral.findOne({_id: req.body.session_id}).exec();
+		if (!collateral) {
+			res.status(400).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Collateral id not found ${req.body.session_id}`
+				}
+			});
+			return;
+		}
+		if (collateral.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Payment expired'
+				}
+			});
+			return;
+		}
+		const timestamp = Date.now();
+		const expiry = new Date(timestamp + Config.QR_EXPIRE);
+		collateral.expiry = expiry;
+		collateral.createdAt = new Date(timestamp);
+
+		const code = await Util.generateDynamicCode();
+		collateral.dynamic_code = code;
+
+		const updated = await collateral.save();
+		if (updated) {
+			res.json({
+				session_id: updated._id,
+				dynamic_code: updated.dynamic_code,
+				expire: updated.expiry.getTime(),
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_COLLATERAL_ERROR',
+				message: 'Error occured while updating collateral'
+			});
+		}
+	}
+);
+
+router.post('/cltr_dyna',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		const timestamp = Date.now();
+		const expiry = new Date(timestamp + Config.QR_EXPIRE).getTime();
+		const code = await Util.generateDynamicCode();
+		//const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+
+		const newCollateral = new Collateral({
 			dynamic_code: code,
 			expiry: expiry,
 			status: 'INIT',
@@ -204,6 +311,117 @@ router.post('/cltr_dyna_refresh',
 	}
 );
 
+router.post('/cltr_cnfm',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.dynamic_code) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter dynamic_code is required'
+				}
+			});
+			return;
+		}
+		if (!req.body.ex_market) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter ex_market is required'
+				}
+			});
+			return;
+		}
+		if (!req.body.collateral_name) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter collateral_name is required'
+				}
+			});
+			return;
+		}
+		if (!req.body.collateral_amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter collateral_amount is required'
+				}
+			});
+			return;
+		}
+		const collateralAmount = Number(req.body.collateral_amount);
+		if (isNaN(collateralAmount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter collateral_amount is not a number'
+				}
+			});
+			return;
+		}
+
+		const params = {
+			dynamic_code: req.body.dynamic_code,
+		};
+		const collateral = await Collateral.findOne(params).exec();
+		if (!collateral) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (collateral.expiry < Date.now()) {
+			res.status(422).json({
+				error: {
+					code: 'EXPIRED',
+					message: 'Expired'
+				}
+			});
+			return;
+		}
+
+		//save
+		if (req.user.v_bank_account === '' || req.user.v_bank_account === null || req.user.v_bank_account === undefined) {
+			const virtualAccount = await Util.generateVirtualBankAccountNumber();
+			req.user.v_bank = '기업은행';
+			req.user.v_bank_account = virtualAccount;
+		}
+		req.user.collateral_amount += collateralAmount;
+
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+		const price = +collateralPrice.close;
+		const collateralValue = Math.floor(collateralAmount * price * 0.7);
+		req.user.token_limit += collateralValue;
+		req.user.token_balance += collateralValue;
+		const updatedUser = await req.user.save();
+
+		collateral.ex_market = req.body.ex_market;
+		collateral.collateral_name = req.body.collateral_name;
+		collateral.collateral_amount = collateralAmount;
+		collateral.status = 'DONE';
+		collateral.account_id = req.user._id;
+		collateral.payer_signature = req.body.payer_signature;
+		collateral.approval_id = Util.generateApprovalId();
+
+		const updatedCollateral = await collateral.save();
+		if (updatedCollateral) {
+			res.json({
+				result: 'OK'
+			});
+		} else {
+			res.status(422).json({
+				code: 'UPDATE_COLLATERAL_ERROR',
+				message: 'Error occured while updating collateral'
+			});
+		}
+	}
+);
+
 router.post('/cltr_cont',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
@@ -248,7 +466,7 @@ router.post('/cltr_cont',
 		res.json({
 			session_id: collateral._id,
 			ex_market: collateral.ex_market,
-			offer_date: new Date().getTime(),
+			offer_date: new Date(collateral.offer_date).getTime(),
 			collateral_name: collateral.collateral_name,
 			collateral_amount: collateral.collateral_amount ? collateral.collateral_amount.toString() : '0',
 			collateral_price: price ? price.toString() : '0',
@@ -259,7 +477,7 @@ router.post('/cltr_cont',
 	}
 );
 
-router.post('/cltr_chck',
+router.post('/cltr_comp',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		// validate params
@@ -323,6 +541,7 @@ router.post('/cltr_chck',
 		collateral.status = 'DONE';
 		collateral.account_id = req.user._id;
 		collateral.payer_signature = req.body.payer_signature;
+		collateral.approval_id = Util.generateApprovalId();
 
 		const updatedCollateral = await collateral.save();
 		if (updatedCollateral) {
