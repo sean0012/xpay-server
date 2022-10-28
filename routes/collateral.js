@@ -557,4 +557,66 @@ router.post('/cltr_comp',
 	}
 );
 
+router.post('/cltr_rset',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		// validate params
+		if (!req.body.approval_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter approval_id is required'
+				}
+			});
+			return;
+		}
+
+		const collateral = await Collateral.findOne({approval_id: req.body.approval_id}).exec();
+		if (!collateral) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Collateral data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (collateral.status === 'RESET') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS_RESET',
+					message: `Collateral status is ${collateral.status}`
+				}
+			});
+			return;
+		}
+		if (!req.body.collateral_rls_amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter collateral_rls_amount is required'
+				}
+			});
+			return;
+		}
+		const releaseAmount = req.body.collateral_rls_amount;
+		if (isNaN(releaseAmount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter collateral_rls_amount is not a number'
+				}
+			});
+			return;
+		}
+
+		collateral.status = 'RESET';
+
+		await collateral.save();
+		res.json({
+			result: 'OK'
+		});
+	}
+);
+
 module.exports = router;
