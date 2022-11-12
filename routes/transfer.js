@@ -1083,12 +1083,29 @@ router.post('/remi_cnfm',
 );
 
 router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), async (req, res) => {
-	const fromDateMoment = moment().subtract(2, 'months').format('YYYY-MM');
+	let fromDateMoment = moment().startOf('month');
+	if (req.query.whence) {
+		if (req.query.whence.length !== 6) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_WHENCE',
+					message: 'Parameter whence must be YYYYMM format'
+				}
+			});
+			return;
+		}
+		const year = req.query.whence.substring(0, 4);
+		const month = req.query.whence.substring(4);
+		fromDateMoment = moment([year, Number(month) - 1]);
+	}
+
 	const fromDate = new Date(fromDateMoment);
+	const toDateMoment = fromDateMoment.endOf('month');
+	const toDate = new Date(toDateMoment)
 	const match = {
 		'$and': [
 			{sender_id: req.user._id},
-			{payment_time: {'$gte': fromDate}}
+			{payment_time: {'$gte': fromDate, '$lte': toDate}}
 		]
 	};
 	const group = {
@@ -1112,12 +1129,12 @@ router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), as
 	const data = {};
 	data.daily = daily;
 
-	const fromDateMoment2 = moment().subtract(1, 'months').format('YYYY-MM');
+	const fromDateMoment2 = fromDateMoment.subtract(1, 'months').format('YYYY-MM');
 	const fromDate2 = new Date(fromDateMoment2);
 	const match2 = {
 		'$and': [
 			{sender_id: req.user._id},
-			{payment_time: {'$gte': fromDate2}},
+			{payment_time: {'$gte': fromDate2, '$lte': toDate}},
 		]
 	};
 	const group2 = {
@@ -1140,7 +1157,13 @@ router.get('/anaz_hist', passport.authenticate('bearer', { session: false }), as
 		}},
 		{'$sort': {'date': 1}},
 	]);
-	data.monthly = monthly;
+	//data.monthly = monthly;
+	data.monthly_prev = monthly.filter(m => {
+		return m.date === fromDateMoment.format('YYYYMM');
+	});
+	data.monthly_now = monthly.filter(m => {
+		return m.date !== fromDateMoment.format('YYYYMM');
+	});
 
 	res.json({
 		data,
