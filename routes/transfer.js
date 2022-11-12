@@ -10,6 +10,7 @@ const Settlement = require('../models/settlement');
 const passport = require('passport');
 const Util = require('../util');
 const moment = require('moment');
+const admin = require('../firebase-config').admin;
 
 // 거래 내역
 router.get('/trade_hist',
@@ -402,6 +403,18 @@ router.post('/pamt_cnfm',
 
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
+			// Firebase Cloud Message
+			admin.getMessaging().send({
+				data: {
+					message_name: 'PAMT_COMP_NOTI',
+					session_id: transfer._id,
+					noti_type: 'RQST',
+					title: '',
+					trade_datetime: new Date(transfer.payment_time).getTime(),
+					amount: transfer.amount.toString(),
+				},
+				token: payer.fcm_token,
+			});
 			res.json({
 				result: 'OK'
 			});
@@ -746,7 +759,6 @@ router.post('/pamt_comp',
 			{_id: transfer.receiver_id},
 			{$inc: {token_balance: marchantGain}}
 		).exec();
-		console.log('merchant findOneAndUpdate:',merchant)
 
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
@@ -758,6 +770,18 @@ router.post('/pamt_comp',
 
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
+			// Firebase Cloud Message
+			admin.getMessaging().send({
+				data: {
+					message_name: 'PAMT_COMP_NOTI',
+					session_id: transfer._id,
+					noti_type: 'COMP',
+					title: '',
+					trade_datetime: new Date(transfer.payment_time).getTime(),
+					amount: transfer.amount.toString(),
+				},
+				token: merchant.fcm_token,
+			});
 			res.json({
 				result: 'OK'
 			});
@@ -784,6 +808,8 @@ router.post('/pamt_canc',
 			});
 			return;
 		}
+
+		// Only paid merchant can cancel it
 
 		const transfer = await Transfer.findOne({approval_id: req.body.approval_id}).exec();
 		if (!transfer) {
@@ -822,6 +848,18 @@ router.post('/pamt_canc',
 		transfer.status = 'CANCELED'
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
+			// Firebase Cloud Message
+			admin.getMessaging().send({
+				data: {
+					message_name: 'PAMT_COMP_NOTI',
+					session_id: transfer._id,
+					noti_type: 'CANC',
+					title: '',
+					trade_datetime: new Date(transfer.payment_time).getTime(),
+					amount: transfer.amount.toString(),
+				},
+				token: payer.fcm_token,
+			});
 			res.json({
 				result: 'OK'
 			});
@@ -958,6 +996,26 @@ router.post('/remi_comp',
 		});
 		const created = await newRemittance.save();
 		if (created) {
+			// Firebase Cloud Message
+			admin.getMessaging().send({
+				data: {
+					message_name: 'REMI_COMP_NOTI',
+					session_id: newRemittance._id,
+					noti_type: 'COMP',
+					title: '',
+					payer_wallet: sender.wallet,
+					payer_first_name: sender.first_name,
+					payer_last_name: sender_last_name,
+					payee_wallet: receiver.wallet,
+					payee_first_name: receiver.first_name,
+					payee_last_name: receiver.last_name,
+					trade_datetime: new Date(newRemittance.payment_time).getTime(),
+					token_name: sender.token_name,
+					token_amount: newRemittance.amount.toString(),
+					memo_message: newRemittance.memo,
+				},
+				token: receiver.fcm_token,
+			});
 			res.json({
 				wallet: created.wallet,
 				first_name: receiver.first_name,

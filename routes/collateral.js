@@ -10,6 +10,7 @@ const MarketPrice = require('../models/market_price');
 const passport = require('passport');
 const Util = require('../util');
 const moment = require('moment');
+const admin = require('../firebase-config').admin;
 
 // 담보 내역
 router.get('/cltr_hist',
@@ -410,6 +411,23 @@ router.post('/cltr_cnfm',
 
 		const updatedCollateral = await collateral.save();
 		if (updatedCollateral) {
+			// Firebase Cloud Message
+			admin.getMessaging().send({
+				data: {
+					message_name: 'CLTR_COMP_NOTI',
+					session_id: collateral._id,
+					noti_type: 'SET',
+					title: '',
+					offer_datetime: new Date(collateral.offer_date).getTime(),
+					collateral_name: collateral.collateral_name,
+					collateral_amount: collateral.collateral_amount.toString(),
+					collateral_price: collateral.collateral_price.toString(),
+					collateral_balance: req.user.collateral_balance.toString(),
+					token_name: req.user.token_name,
+					token_limit: req.user.token_limit,
+				},
+				token: req.user.fcm_token,
+			});
 			res.json({
 				result: 'OK'
 			});
@@ -545,6 +563,23 @@ router.post('/cltr_comp',
 
 		const updatedCollateral = await collateral.save();
 		if (updatedCollateral) {
+			// Firebase Cloud Message
+			admin.getMessaging().send({
+				data: {
+					message_name: 'CLTR_COMP_NOTI',
+					session_id: collateral._id,
+					noti_type: 'SET',
+					title: '',
+					offer_datetime: new Date(collateral.offer_date).getTime(),
+					collateral_name: collateral.collateral_name,
+					collateral_amount: collateral.collateral_amount.toString(),
+					collateral_price: collateral.collateral_price.toString(),
+					collateral_balance: req.user.collateral_balance.toString(),
+					token_name: req.user.token_name,
+					token_limit: req.user.token_limit,
+				},
+				token: req.user.fcm_token,
+			});
 			res.json({
 				result: 'OK'
 			});
