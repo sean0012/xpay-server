@@ -389,32 +389,44 @@ router.post('/pamt_cnfm',
 		}
 		payer.token_balance -= amountToDeductFromPayer;
 		payer.payment_thismonth += amountToDeductFromPayer;
-		const updatedPayer = await payer.save();
+		try {
+			const updatedPayer = await payer.save();
+		} catch(error) {
+			console.error(`pamt_cnfm payer.save() error: ${error}, req.body: ${req.body},`);
+		}
 
 		let marchantGain = amount;
 		if (transfer.fee) marchantGain -= transfer.fee;
 
 		req.user.token_balance += marchantGain;
-		const updatedUser = await req.user.save();
+		try {
+			const updatedUser = await req.user.save();
+		} catch(error) {
+			console.error(`pamt_cnfm req.user.save() error: ${error}, req.body: ${req.body},`);
+		}
 
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
 		transfer.payment_time = Date.now();
 
-		const updatedTransfer = await transfer.save();
+		try {
+			const updatedTransfer = await transfer.save();
+		} catch(error) {
+			console.error(`pamt_cnfm transfer.save() error: ${error}, req.body: ${req.body},`)
+		}
 		if (updatedTransfer) {
 			// Firebase Cloud Message
-			admin.getMessaging().send({
-				data: {
-					message_name: 'PAMT_COMP_NOTI',
-					session_id: transfer._id,
-					noti_type: 'RQST',
-					title: '',
-					trade_datetime: new Date(transfer.payment_time).getTime(),
-					amount: transfer.amount.toString(),
-				},
-				token: payer.fcm_token,
-			});
+			// admin.getMessaging().send({
+			// 	data: {
+			// 		message_name: 'PAMT_COMP_NOTI',
+			// 		session_id: transfer._id,
+			// 		noti_type: 'RQST',
+			// 		title: '',
+			// 		trade_datetime: new Date(transfer.payment_time).getTime(),
+			// 		amount: transfer.amount.toString(),
+			// 	},
+			// 	token: payer.fcm_token,
+			// });
 			res.json({
 				result: 'OK'
 			});
@@ -750,15 +762,23 @@ router.post('/pamt_comp',
 		}
 		req.user.token_balance -= amountToDeductFromPayer;
 		req.user.payment_thismonth += amountToDeductFromPayer;
-		const updatedUser = await req.user.save();
+		try {
+			const updatedUser = await req.user.save();
+		} catch(error) {
+			console.error(`pamt_comp req.user.save() error: ${error}, req.body: ${req.body},`);
+		}
 
 		let marchantGain = transfer.amount;
 		if (transfer.fee) marchantGain -= transfer.fee;
 
-		const merchant = await Account.findOneAndUpdate(
-			{_id: transfer.receiver_id},
-			{$inc: {token_balance: marchantGain}}
-		).exec();
+		try {
+			const merchant = await Account.findOneAndUpdate(
+				{_id: transfer.receiver_id},
+				{$inc: {token_balance: marchantGain}}
+			).exec();
+		} catch(error) {
+			console.error(`pamt_comp merchant findOneAndUpdate() error: ${error}, req.body: ${req.body},`);
+		}
 
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
@@ -768,20 +788,24 @@ router.post('/pamt_comp',
 		transfer.payer_signature = req.body.payer_signature;
 		transfer.payment_time = Date.now();
 
-		const updatedTransfer = await transfer.save();
+		try {
+			const updatedTransfer = await transfer.save();
+		} catch(error) {
+			console.error(`pamt_comp transfer.save() error: ${error}, req.body: ${req.body},`);
+		}
 		if (updatedTransfer) {
 			// Firebase Cloud Message
-			admin.getMessaging().send({
-				data: {
-					message_name: 'PAMT_COMP_NOTI',
-					session_id: transfer._id,
-					noti_type: 'COMP',
-					title: '',
-					trade_datetime: new Date(transfer.payment_time).getTime(),
-					amount: transfer.amount.toString(),
-				},
-				token: merchant.fcm_token,
-			});
+			// admin.getMessaging().send({
+			// 	data: {
+			// 		message_name: 'PAMT_COMP_NOTI',
+			// 		session_id: transfer._id,
+			// 		noti_type: 'COMP',
+			// 		title: '',
+			// 		trade_datetime: new Date(transfer.payment_time).getTime(),
+			// 		amount: transfer.amount.toString(),
+			// 	},
+			// 	token: merchant.fcm_token,
+			// });
 			res.json({
 				result: 'OK'
 			});
@@ -849,17 +873,17 @@ router.post('/pamt_canc',
 		const updatedTransfer = await transfer.save();
 		if (updatedTransfer) {
 			// Firebase Cloud Message
-			admin.getMessaging().send({
-				data: {
-					message_name: 'PAMT_COMP_NOTI',
-					session_id: transfer._id,
-					noti_type: 'CANC',
-					title: '',
-					trade_datetime: new Date(transfer.payment_time).getTime(),
-					amount: transfer.amount.toString(),
-				},
-				token: payer.fcm_token,
-			});
+			// admin.getMessaging().send({
+			// 	data: {
+			// 		message_name: 'PAMT_COMP_NOTI',
+			// 		session_id: transfer._id,
+			// 		noti_type: 'CANC',
+			// 		title: '',
+			// 		trade_datetime: new Date(transfer.payment_time).getTime(),
+			// 		amount: transfer.amount.toString(),
+			// 	},
+			// 	token: payer.fcm_token,
+			// });
 			res.json({
 				result: 'OK'
 			});
@@ -997,25 +1021,25 @@ router.post('/remi_comp',
 		const created = await newRemittance.save();
 		if (created) {
 			// Firebase Cloud Message
-			admin.getMessaging().send({
-				data: {
-					message_name: 'REMI_COMP_NOTI',
-					session_id: newRemittance._id,
-					noti_type: 'COMP',
-					title: '',
-					payer_wallet: sender.wallet,
-					payer_first_name: sender.first_name,
-					payer_last_name: sender_last_name,
-					payee_wallet: receiver.wallet,
-					payee_first_name: receiver.first_name,
-					payee_last_name: receiver.last_name,
-					trade_datetime: new Date(newRemittance.payment_time).getTime(),
-					token_name: sender.token_name,
-					token_amount: newRemittance.amount.toString(),
-					memo_message: newRemittance.memo,
-				},
-				token: receiver.fcm_token,
-			});
+			// admin.getMessaging().send({
+			// 	data: {
+			// 		message_name: 'REMI_COMP_NOTI',
+			// 		session_id: newRemittance._id,
+			// 		noti_type: 'COMP',
+			// 		title: '',
+			// 		payer_wallet: sender.wallet,
+			// 		payer_first_name: sender.first_name,
+			// 		payer_last_name: sender_last_name,
+			// 		payee_wallet: receiver.wallet,
+			// 		payee_first_name: receiver.first_name,
+			// 		payee_last_name: receiver.last_name,
+			// 		trade_datetime: new Date(newRemittance.payment_time).getTime(),
+			// 		token_name: sender.token_name,
+			// 		token_amount: newRemittance.amount.toString(),
+			// 		memo_message: newRemittance.memo,
+			// 	},
+			// 	token: receiver.fcm_token,
+			// });
 			res.json({
 				wallet: created.wallet,
 				first_name: receiver.first_name,
