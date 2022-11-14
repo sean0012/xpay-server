@@ -32,19 +32,22 @@ const check = async () => {
 		const receiverObject = {};
 		const payers = new Set();
 		paidTransfers.map(t => {
-			payers.add(t.sender_id);
-			if (t.receiver_id in receiverObject) {
+			if (t.receiver_id) {
+				payers.add(t.sender_id);
+				if (t.receiver_id in receiverObject) {
 
-			} else {
-				receiverObject[t.receiver_id] = [];
+				} else {
+					receiverObject[t.receiver_id] = [];
+				}
+
+				const payerPointsGained = t.payer_points_gained ? t.payer_points_gained : 0;
+				const transferAmount = t.amount ? t.amount : 0;
+
+				receiverObject[t.receiver_id].push({
+					amount: transferAmount,
+					payer_points_gained: payerPointsGained,
+				});
 			}
-
-			const payerPointsGained = t.payer_points_gained ? t.payer_points_gained : 0;
-
-			receiverObject[t.receiver_id].push({
-				amount: t.amount,
-				payer_points_gained: payerPointsGained,
-			});
 		});
 		console.log('receiverObject:',receiverObject);
 
