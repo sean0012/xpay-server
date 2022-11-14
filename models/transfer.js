@@ -26,7 +26,7 @@ const dataSchema = new mongoose.Schema({
 	expiry: {type: Date},
 	category: {type: String}, // Account.business_category
 	type: {type: String}, // CLTR_SET | PAYMENT | REMIT | WITHDRAWAL | REPAYMENT
-	status: {type: String}, // INIT | CANCELED | PAID | EXPIRED
+	status: {type: String}, // INIT | CANCELED | PAID | DYNA
 	approval_id: {type: String, required: false}, // 9 digits number
 	payer_points_using: {type: Number},
 	payer_points_gained: {type: Number},

@@ -199,7 +199,7 @@ router.post('/pamt_dyna', passport.authenticate('bearer', { session: false }), a
 			done: upcomingSettlement.done,
 		},
 		type: 'PAYMENT',
-		status: 'INIT',
+		status: 'DYNA',
 		dynamic_code: code,
 		expiry: expiry,
 	});
@@ -260,6 +260,15 @@ router.post('/pamt_dyna_refresh',
 			});
 			return;
 		}
+		if (transfer.status !== 'DYNA') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Payment status is ${transfer.status}`
+				}
+			});
+			return;
+		}
 		if (transfer.expiry < Date.now()) {
 			res.status(422).json({
 				error: {
@@ -315,7 +324,7 @@ router.post('/pamt_cnfm',
 			});
 			return;
 		}
-		if (transfer.status !== 'INIT') {
+		if (transfer.status !== 'DYNA') {
 			res.status(422).json({
 				error: {
 					code: 'INVALID_STATUS',
@@ -392,7 +401,7 @@ router.post('/pamt_cnfm',
 		try {
 			const updatedPayer = await payer.save();
 		} catch(error) {
-			console.error(`pamt_cnfm payer.save() error: ${error}, req.body: ${req.body},`);
+			console.error(`pamt_cnfm payer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
 
 		let marchantGain = amount;
@@ -402,7 +411,7 @@ router.post('/pamt_cnfm',
 		try {
 			const updatedUser = await req.user.save();
 		} catch(error) {
-			console.error(`pamt_cnfm req.user.save() error: ${error}, req.body: ${req.body},`);
+			console.error(`pamt_cnfm req.user.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
 
 		transfer.approval_id = Util.generateApprovalId();
@@ -412,7 +421,7 @@ router.post('/pamt_cnfm',
 		try {
 			const updatedTransfer = await transfer.save();
 		} catch(error) {
-			console.error(`pamt_cnfm transfer.save() error: ${error}, req.body: ${req.body},`)
+			console.error(`pamt_cnfm transfer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`)
 		}
 		if (updatedTransfer) {
 			// Firebase Cloud Message
@@ -558,6 +567,15 @@ router.post('/pamt_init_refresh',
 				error: {
 					code: 'DATA_NOT_FOUND',
 					message: `Transfer id not found ${req.body.session_id}`
+				}
+			});
+			return;
+		}
+		if (transfer.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Payment status is ${transfer.status}`
 				}
 			});
 			return;
@@ -765,7 +783,7 @@ router.post('/pamt_comp',
 		try {
 			const updatedUser = await req.user.save();
 		} catch(error) {
-			console.error(`pamt_comp req.user.save() error: ${error}, req.body: ${req.body},`);
+			console.error(`pamt_comp req.user.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
 
 		let marchantGain = transfer.amount;
@@ -777,7 +795,7 @@ router.post('/pamt_comp',
 				{$inc: {token_balance: marchantGain}}
 			).exec();
 		} catch(error) {
-			console.error(`pamt_comp merchant findOneAndUpdate() error: ${error}, req.body: ${req.body},`);
+			console.error(`pamt_comp merchant findOneAndUpdate() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
 
 		transfer.approval_id = Util.generateApprovalId();
@@ -791,7 +809,7 @@ router.post('/pamt_comp',
 		try {
 			const updatedTransfer = await transfer.save();
 		} catch(error) {
-			console.error(`pamt_comp transfer.save() error: ${error}, req.body: ${req.body},`);
+			console.error(`pamt_comp transfer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
 		if (updatedTransfer) {
 			// Firebase Cloud Message
