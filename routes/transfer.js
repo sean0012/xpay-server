@@ -150,7 +150,8 @@ router.get('/point_hist',
 		const transfers = await Transfer.find(filter, {}, {
 			sort: {
 				createdAt: -1,
-			}
+			},
+			limit: 20,
 		}).lean();
 
 		const data = transfers.map(transfer => ({
