@@ -11,6 +11,13 @@ router.get('/hist',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		const filter = {account_id: req.user._id};
+		if (req.query.type) {
+			if (req.query.type === 'in') {
+				filter['banking.amount'] = {'$gt': 0};
+			} else if (req.query.type === 'out') {
+				filter['banking.amount'] = {'$lt': 0};
+			}
+		}
 		if (req.query.last_session_id) {
 			filter._id = {
 				'$lt': req.query.last_session_id
@@ -44,7 +51,7 @@ router.get('/hist',
 			id: ledger._id,
 			deposit_type: ledger.banking.deposit_type ? ledger.banking.deposit_type : 'O_BANK',
 			name: ledger.banking.name,
-			amount: ledger.banking.amount.toString(),
+			amount: req.query.type && req.query.type === 'out' ? Math.abs(ledger.banking.amount).toString() : ledger.banking.amount.toString(),
 			bank_name: ledger.banking.bank_name,
 			bank_account: ledger.banking.bank_account,
 			printed_content: ledger.banking.printed_content,
