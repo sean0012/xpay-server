@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
+	quote: {type: String},
+	base: {type: String},
 	timestamp: {type: Date},
 	open: {type: String},
 	high: {type: String},

@@ -19,15 +19,15 @@ database.once('connected', () => {
 			database.close();
 			console.log('codes:',docs.length)
 		} else {
-			const pool = generateRandomNumber(4, 1);
-			const docs = pool.map(code => ({
+			const pool = generateRandomNumber(7, 23);
+			const poolMapped = pool.map(code => ({
 				code: code,
 				used: false,
 			}));
 
-			DynamicCode.insertMany(docs, (error, results) => {
+			DynamicCode.insertMany(poolMapped, (error, results) => {
 				console.log('error:',error)
-				console.log('docs:',results)
+				console.log('poolMapped:',results)
 
 				database.close();
 			});
