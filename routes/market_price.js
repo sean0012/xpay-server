@@ -19,7 +19,6 @@ router.get('/coinprice_hist',
 			return;
 		}
 		const pair = req.query.pair.split('-');
-		console.log(pair)
 		if (pair.length !== 2) {
 			res.status(400).json({
 				error: {
@@ -80,7 +79,7 @@ router.get('/coinprice_hist',
 			'$gte': start,
 			'$lte': end
 		};
-		//console.log('start:',start, 'end:',end)
+		console.log('coinprice_hist:',pair, start, end, interval);
 
 		const data = await MarketPrice.find(filter, {}, {
 			limit: 200,
