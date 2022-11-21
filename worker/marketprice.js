@@ -3,14 +3,20 @@ const INTERVAL = 60 * 60 * 1000; // 1 hour
 const MarketPrice = require('../models/market_price');
 const axios = require('axios');
 
-// https://api.coinone.co.kr/public/v2/chart/KRW/ETH?interval=1h
-// {"timestamp":1668888000000,"open":"1672000.0","high":"1673000.0","low":"1671000.0","close":"1672000.0","target_volume":"10.8793","quote_volume":"18190829.2"},{
 const endpoint = 'https://api.coinone.co.kr';
 const quote = 'KRW';
 const base = 'ETH';
-const url = `${endpoint}/public/v2/chart/${quote}/${base}?interval=1h`;
 
-const getMarketPrice = async () => {
+
+const coinoneIntervalTable = {
+	'60': '1h',
+	'1440': '1d'
+};
+//"1m" "3m" "5m" "15m" "30m" "1h" "2h" "4h" "6h" "1d" "1w"
+
+const getMarketPrice = async (interval) => {
+	const coinoneInterval = coinoneIntervalTable[interval];
+	const url = `${endpoint}/public/v2/chart/${quote}/${base}?interval=${coinoneInterval}`;
 	const response = await axios.get(url);
 
 	if (!response.data.chart) {
@@ -29,7 +35,7 @@ const getMarketPrice = async () => {
 						high: item.high,
 						low: item.low,
 						close: item.close,
-						interval: '60',
+						interval: interval,
 						quote_volume: item.quote_volume,
 					}
 				},
@@ -38,7 +44,7 @@ const getMarketPrice = async () => {
 		}));
 		
 		const bulkRes = await MarketPrice.bulkWrite(docs);
-		console.log('bulkResult:',bulkRes);
+		console.log('bulkResult:', interval, bulkRes);
 
 	}
 	

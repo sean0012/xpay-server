@@ -20,7 +20,8 @@ database.on('error', (error) => {
 database.once('connected', () => {
 	console.log('Database Connected');
 	workerSettlement.check();
-	workerMarketprice.getMarketPrice();
+	workerMarketprice.getMarketPrice('60');
+	workerMarketprice.getMarketPrice('1440');
 });
 
 const app = express();
