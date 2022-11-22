@@ -10,7 +10,7 @@ const dataSchema = new mongoose.Schema({
 	dynamic_code: {type: String, required: false},
 	expiry: {type: Date},
 	approval_id: {type: String},
-	status: {type: String, uppercase: true}, // INIT | DONE | RESET
+	status: {type: String, uppercase: true}, // INIT | DYNA | DONE | RESET
 }, { timestamps: true });
 
 module.exports = mongoose.model('Collaterals', dataSchema);

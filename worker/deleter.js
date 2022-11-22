@@ -1,30 +1,27 @@
-const INTERVAL = 1 * 5 * 1000 // 10 min
+const INTERVAL = 60 * 60 * 1000; // 1 hour
+const OLD = 1; // 1 day old
 
-require('dotenv').config();
-const mongoose = require('mongoose');
-const mongoString = process.env.DATABASE_URL;
+const moment = require('moment');
 const Transfer = require('../models/transfer');
 const Collateral = require('../models/collateral');
 
-mongoose.connect(mongoString);
-const database = mongoose.connection;
-
-database.on('error', (error) => {
-	console.log(error);
-});
-
-database.once('connected', () => {
-	console.log('Database Connected');
-	check();
-});
-
 const check = async () => {
-	console.log('check');
-	const expiredTransfers = await Transfer.find({status: 'INIT'}).lean();
-	const expiredCollaterals = await Collateral.find({status: 'INIT'}).lean();
+	const oldEnough = moment().subtract(OLD, 'days')
+	console.log('deleter check', oldEnough);
 
-	console.log('expiredTransfers:',expiredTransfers.length);
-	console.log('expiredCollaterals:',expiredCollaterals.length);
+	const deleteTransferResult = await Transfer.deleteMany({
+		'$or': [{status: 'INIT'}, {status: 'DYNA'}],
+		expiry: {'$lt': oldEnough}
+	}).lean();
+	const deleteCollateralResult = await Collateral.deleteMany({
+		'$or': [{status: 'INIT'}, {status: 'DYNA'}],
+		expiry: {'$lt': oldEnough}
+	}).lean();
 
-	setTimeout(check, INTERVAL)
+	console.log('deleteTransferResult:',deleteTransferResult);
+	console.log('deleteCollateralResult:',deleteCollateralResult);
+
+	setTimeout(check, INTERVAL);
 };
+
+module.exports = { check };

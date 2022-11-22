@@ -183,6 +183,15 @@ router.post('/cltr_init_refresh',
 			});
 			return;
 		}
+		if (collateral.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Collateral status is ${collateral.status}`
+				}
+			});
+			return;
+		}
 		if (collateral.expiry < Date.now()) {
 			res.status(422).json({
 				error: {
@@ -227,7 +236,7 @@ router.post('/cltr_dyna',
 		const newCollateral = new Collateral({
 			dynamic_code: code,
 			expiry: expiry,
-			status: 'INIT',
+			status: 'DYNA',
 		});
 		const created = await newCollateral.save();
 		if (created) {
@@ -371,6 +380,15 @@ router.post('/cltr_cnfm',
 				error: {
 					code: 'DATA_NOT_FOUND',
 					message: `Data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (collateral.status !== 'DYNA') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Collateral status is ${collateral.status}`
 				}
 			});
 			return;
@@ -526,6 +544,15 @@ router.post('/cltr_comp',
 				error: {
 					code: 'DATA_NOT_FOUND',
 					message: `Data not found in server DB`
+				}
+			});
+			return;
+		}
+		if (collateral.status !== 'INIT') {
+			res.status(422).json({
+				error: {
+					code: 'INVALID_STATUS',
+					message: `Collateral status is ${collateral.status}`
 				}
 			});
 			return;

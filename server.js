@@ -9,6 +9,7 @@ const routes = require('./routes');
 const Account = require('./models/account');
 const workerSettlement = require('./worker/settlement');
 const workerMarketprice = require('./worker/marketprice');
+const workerDeleter = require('./worker/deleter');
 
 mongoose.connect(mongoString);
 const database = mongoose.connection;
@@ -22,6 +23,7 @@ database.once('connected', () => {
 	workerSettlement.check();
 	workerMarketprice.getMarketPrice('60');
 	workerMarketprice.getMarketPrice('1440');
+	workerDeleter.check();
 });
 
 const app = express();
