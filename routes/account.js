@@ -132,7 +132,20 @@ router.post('/recovery', async (req, res) => {
 		return;
 	}
 
-	const account = await Account.findOne({secret_hash: req.body.secret_hash}).exec();
+	if (!req.body.wallet) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_REQUIRED_PARAMS',
+				message: 'Parameter wallet is required'
+			}
+		});
+		return;
+	}
+
+	const account = await Account.findOne({
+		secret_hash: req.body.secret_hash,
+		wallet: req.body.wallet,
+	}).exec();
 	if (!account) {
 		res.status(400).json({
 			error: {
@@ -149,18 +162,18 @@ router.post('/recovery', async (req, res) => {
 	res.json({
 		result: 'OK',
 		auth_token: account.auth_token,
-		last_name: account.last_name,
-		first_name: account.first_name,
-		birth_date: account.birth_date,
-		phone: account.phone,
-		email: account.email,
-		merchant_name: account.merchant_name,
-		business_registration: account.business_registration,
-		v_bank: account.v_bank,
-		v_bank_account: account.v_bank_account,
-		bank_name: account.bank_name,
-		bank_account: account.bank_account,
-		autotransfer: account.autotransfer,
+		last_name: account.last_name ? account.last_name : '',
+		first_name: account.first_name ? account.first_name : '',
+		birth_date: account.birth_date ? account.birth_date : '',
+		phone: account.phone ? account.phone : '',
+		email: account.email ? account.email : '',
+		merchant_name: account.merchant_name ? account.merchant_name : '',
+		business_registration: account.business_registration ? account.business_registration : '',
+		v_bank: account.v_bank ? account.v_bank : '',
+		v_bank_account: account.v_bank_account ? account.v_bank_account : '',
+		bank_name: account.bank_name ? account.bank_name : '',
+		bank_account: account.bank_account ? account.bank_account : '',
+		autotransfer: account.autotransfer ? account.autotransfer : '',
 	});
 });
 
@@ -205,21 +218,23 @@ router.get('/static',
 		res.json({
 			wallet: req.user.wallet,
 			user_type: req.user.user_type,
-			first_name: req.user.first_name,
-			last_name: req.user.last_name,
-			merchant_name: req.user.merchant_name,
-			birth_date: req.user.birth_date,
-			v_bank: req.user.v_bank,
-			v_bank_account: req.user.v_bank_account,
-			phone: req.user.phone,
-			email: req.user.email,
-			address: req.user.address,
-			business_registration: req.user.business_registration,
-			business_category: req.user.business_category,
-			bank_cs_name: req.user.bank_cs_name,
-			bank_cs_birth: req.user.bank_cs_birth,
-			bank_name: req.user.bank_name,
-			bank_account: req.user.bank_account,
+			first_name: req.user.first_name ? req.user.first_name : '',
+			last_name: req.user.last_name ? req.user.last_name : '',
+			merchant_name: req.user.merchant_name ? req.user.merchant_name : '',
+			birth_date: req.user.birth_date ? req.user.birth_date : '',
+			v_bank: req.user.v_bank ? req.user.v_bank : '',
+			v_bank_account: req.user.v_bank_account ? req.user.v_bank_account : '',
+			phone: req.user.phone ? req.user.phone : '',
+			email: req.user.email ? req.user.email : '',
+			address: req.user.address ? req.user.address : '',
+			business_registration: req.user.business_registration ? req.user.business_registration : '',
+			business_category: req.user.business_category ? req.user.business_category : '',
+			memo_1: req.user.memo_1 ? req.user.memo_1 : '',
+			memo_2: req.user.memo_2 ? req.user.memo_2 : '',
+			bank_cs_name: req.user.bank_cs_name ? req.user.bank_cs_name : '',
+			bank_cs_birth: req.user.bank_cs_birth ? req.user.bank_cs_birth : '',
+			bank_name: req.user.bank_name ? req.user.bank_name : '',
+			bank_account: req.user.bank_account ? req.user.bank_account : '',
 			settlement_date: new Date(paymentDate).getTime(),
 			settlement_period: '30',
 			autotransfer: req.user.autotransfer ? 'YES' : 'NO',
@@ -250,13 +265,13 @@ router.get('/status',
 			collateral_balance: req.user.collateral_balance ? req.user.collateral_balance.toString() : '0',
 			collateral_liquidation: req.user.collateral_liquidation ? req.user.collateral_liquidation.toString() : '0',
 			token_name: req.user.token_name,
-			token_limit: req.user.token_limit ? req.user.token_limit.toString() : undefined,
-			token_using: req.user.token_using ? req.user.token_using.toString() : undefined,
-			token_balance: req.user.token_balance ? req.user.token_balance.toString() : undefined,
+			token_limit: req.user.token_limit ? req.user.token_limit.toString() : '0',
+			token_using: req.user.token_using ? req.user.token_using.toString() : '0',
+			token_balance: req.user.token_balance ? req.user.token_balance.toString() : '0',
 			withdrawable: req.user.withdrawable ? req.user.withdrawable.toString() : '0',
 			deposit: req.user.deposit ? req.user.deposit.toString() : '0',
 			points: req.user.points ? req.user.points.toString() : '0',
-			grade: req.user.grade ? req.user.grade.toString() : undefined,
+			grade: req.user.grade ? req.user.grade.toString() : '0',
 			remit_date: new Date(0).getTime(),
 			remit_count: '0',
 			remit_limit: '100000',
@@ -269,7 +284,6 @@ router.get('/status',
 
 // 개인정보 정정
 router.patch('/modi_my', passport.authenticate('bearer', { session: false }), async (req, res) => {
-	console.log('modi_my', req.body)
 	if (req.body.last_name) {
 		req.user.last_name = req.body.last_name;
 	}
@@ -294,6 +308,15 @@ router.patch('/modi_my', passport.authenticate('bearer', { session: false }), as
 	if (req.body.business_registration) {
 		req.user.business_registration = req.body.business_registration;
 	}
+	if (req.body.business_category) {
+		req.user.business_category = req.body.business_category;
+	}
+	if (req.body.memo_1) {
+		req.user.memo_1 = req.body.memo_1;
+	}
+	if (req.body.memo_2) {
+		req.user.memo_2 = req.body.memo_2;
+	}
 	const updatedUser = await req.user.save();
 	res.json({
 		first_name: updatedUser.first_name,
@@ -305,6 +328,9 @@ router.patch('/modi_my', passport.authenticate('bearer', { session: false }), as
 		address: updatedUser.address,
 		merchant_name: updatedUser.merchant_name,
 		business_registration: updatedUser.business_registration,
+		business_category: updatedUser.business_category,
+		memo_1: updatedUser.memo_1,
+		memo_2: updatedUser.memo_2,
 	});
 });
 

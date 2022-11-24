@@ -40,6 +40,8 @@ const dataSchema = new mongoose.Schema({
 	payment_nextmonth: {required: true, type: Number, default: 0},
 	autotransfer: {type: Boolean},
 	currency: {type: String},
+	memo_1: {type: String},
+	memo_2: {type: String},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Account', dataSchema);
