@@ -20,10 +20,10 @@ database.on('error', (error) => {
 
 database.once('connected', () => {
 	console.log('Database Connected');
-	// workerSettlement.check();
-	// workerMarketprice.getMarketPrice('60');
-	// workerMarketprice.getMarketPrice('1440');
-	// workerDeleter.check();
+	workerSettlement.check();
+	workerMarketprice.getMarketPrice('60');
+	workerMarketprice.getMarketPrice('1440');
+	workerDeleter.check();
 });
 
 const app = express();
