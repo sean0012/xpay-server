@@ -5,9 +5,11 @@ const express = require('express');
 const router = express.Router();
 const Version = require('../models/version');
 const Account = require('../models/account');
+const Collateral = require('../models/collateral');
 const Settlement = require('../models/settlement');
 const MarketPrice = require('../models/market_price');
 const passport = require('passport');
+const Util = require('../util');
 
 // 초기화면 앱 구동 버전 체크
 router.post('/first_run', async (req, res) => {
@@ -21,7 +23,7 @@ router.post('/first_run', async (req, res) => {
 		});
 		return;
 	}
-	const paramVersion = Number(req.body.version)
+	const paramVersion = Number(req.body.version);
 	if (isNaN(paramVersion)) {
 		res.status(400).json({
 			error: {
@@ -108,6 +110,38 @@ router.post('/registration', async (req, res) => {
 			fcm_token: req.body.fcm_token,
 		});
 		const created = await newAccount.save();
+
+		// temp: 새 계정 생성 시점에 담보, 한도 부여 start
+		const virtualAccount = await Util.generateVirtualBankAccountNumber();
+		newAccount.v_bank = '기업은행';
+		newAccount.v_bank_account = virtualAccount;
+		const collateralAmount = 1000000;
+		newAccount.collateral_amount += collateralAmount;
+
+		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
+		const price = +collateralPrice.close;
+		const collateralValue = Math.floor(collateralAmount * price * 0.7);
+		newAccount.token_limit += collateralValue;
+		newAccount.token_balance += collateralValue;
+		const updatedUser = await newAccount.save();
+
+		console.log('newAccount:',newAccount);
+		console.log('updatedUser:',updatedUser);
+		console.log('created:',created);
+
+		const newCollateral = new Collateral({
+			dynamic_code: '',
+			expiry: new Date(),
+			status: 'DONE',
+			ex_market: 'COINONE',
+			collateral_name: 'MRF',
+			collateral_amount: collateralAmount,
+			account_id: created._id,
+			approval_id: Util.generateApprovalId(),
+		});
+		const createdCollateral = await newCollateral.save();
+		// temp: 새 계정 생성 시점에 담보, 한도 부여 end
+
 		res.json({
 			auth_token: auth_token
 		});
