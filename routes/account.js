@@ -115,7 +115,7 @@ router.post('/registration', async (req, res) => {
 		const virtualAccount = await Util.generateVirtualBankAccountNumber();
 		newAccount.v_bank = '기업은행';
 		newAccount.v_bank_account = virtualAccount;
-		const collateralAmount = 1000000;
+		const collateralAmount = 0.599;
 		newAccount.collateral_amount += collateralAmount;
 
 		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
