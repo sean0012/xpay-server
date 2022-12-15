@@ -420,32 +420,25 @@ router.post('/pamt_cnfm',
 		transfer.payment_time = Date.now();
 
 		try {
-			const updatedTransfer = await transfer.save();
+			await transfer.save();
 		} catch(error) {
 			console.error(`pamt_cnfm transfer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`)
 		}
-		if (updatedTransfer) {
-			// Firebase Cloud Message
-			// admin.getMessaging().send({
-			// 	data: {
-			// 		message_name: 'PAMT_COMP_NOTI',
-			// 		session_id: transfer._id,
-			// 		noti_type: 'RQST',
-			// 		title: '',
-			// 		trade_datetime: new Date(transfer.payment_time).getTime(),
-			// 		amount: transfer.amount.toString(),
-			// 	},
-			// 	token: payer.fcm_token,
-			// });
-			res.json({
-				result: 'OK'
-			});
-		} else {
-			res.status(422).json({
-				code: 'UPDATE_TRANSFER_ERROR',
-				message: 'Error occured while updating transfer'
-			});
-		}
+		// Firebase Cloud Message
+		// admin.getMessaging().send({
+		// 	data: {
+		// 		message_name: 'PAMT_COMP_NOTI',
+		// 		session_id: transfer._id,
+		// 		noti_type: 'RQST',
+		// 		title: '',
+		// 		trade_datetime: new Date(transfer.payment_time).getTime(),
+		// 		amount: transfer.amount.toString(),
+		// 	},
+		// 	token: payer.fcm_token,
+		// });
+		res.json({
+			result: 'OK'
+		});
 	}
 );
 
@@ -808,32 +801,25 @@ router.post('/pamt_comp',
 		transfer.payment_time = Date.now();
 
 		try {
-			const updatedTransfer = await transfer.save();
+			await transfer.save();
 		} catch(error) {
 			console.error(`pamt_comp transfer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
-		if (updatedTransfer) {
-			// Firebase Cloud Message
-			// admin.getMessaging().send({
-			// 	data: {
-			// 		message_name: 'PAMT_COMP_NOTI',
-			// 		session_id: transfer._id,
-			// 		noti_type: 'COMP',
-			// 		title: '',
-			// 		trade_datetime: new Date(transfer.payment_time).getTime(),
-			// 		amount: transfer.amount.toString(),
-			// 	},
-			// 	token: merchant.fcm_token,
-			// });
-			res.json({
-				result: 'OK'
-			});
-		} else {
-			res.status(422).json({
-				code: 'UPDATE_TRANSFER_ERROR',
-				message: 'Error occured while updating transfer'
-			});
-		}
+		// Firebase Cloud Message
+		// admin.getMessaging().send({
+		// 	data: {
+		// 		message_name: 'PAMT_COMP_NOTI',
+		// 		session_id: transfer._id,
+		// 		noti_type: 'COMP',
+		// 		title: '',
+		// 		trade_datetime: new Date(transfer.payment_time).getTime(),
+		// 		amount: transfer.amount.toString(),
+		// 	},
+		// 	token: merchant.fcm_token,
+		// });
+		res.json({
+			result: 'OK'
+		});
 	}
 );
 
