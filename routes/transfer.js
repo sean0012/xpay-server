@@ -974,15 +974,15 @@ router.post('/remi_comp',
 			sender_id: req.user._id,
 			createdAt: { $gt: yesterday },
 		});
-		if (past24hRemittance) {
-			res.status(422).json({
-				error: {
-					code: 'RATE_LIMIT_24H',
-					message: 'Remittance once only per 24h'
-				}
-			});
-			return;
-		}
+		// if (past24hRemittance) {
+		// 	res.status(422).json({
+		// 		error: {
+		// 			code: 'RATE_LIMIT_24H',
+		// 			message: 'Remittance once only per 24h'
+		// 		}
+		// 	});
+		// 	return;
+		// }
 		if (req.body.wallet === req.user.wallet) {
 			res.status(400).json({
 				error: {
