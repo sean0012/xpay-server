@@ -16,16 +16,16 @@ const coinoneIntervalTable = {
 
 const getMarketPrice = async (interval) => {
 	const coinoneInterval = coinoneIntervalTable[interval];
+	console.log('coinoneInterval:', coinoneInterval);
 	const url = `${endpoint}/public/v2/chart/${quote}/${base}?interval=${coinoneInterval}`;
 	const response = await axios.get(url);
 
 	if (!response.data.chart) {
-		console.error('marketprice error: chart data empty');
+		console.error('marketprice error: chart data empty',interval, response.data);
 	} else {
-		console.log('marketetprice worker axios got response', response.data.chart.length);
 		const docs = response.data.chart.map(item => ({
 			updateOne: {
-				filter: {timestamp: new Date(item.timestamp)},
+				filter: {timestamp: new Date(item.timestamp), interval: interval},
 				update: {
 					'$set': {
 						quote: quote,
@@ -48,7 +48,9 @@ const getMarketPrice = async (interval) => {
 
 	}
 	
-	setTimeout(getMarketPrice, INTERVAL)
+	setTimeout(() => {
+		getMarketPrice(interval);
+	}, INTERVAL);
 };
 
 module.exports = { getMarketPrice };
