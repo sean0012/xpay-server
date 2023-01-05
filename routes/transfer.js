@@ -113,13 +113,15 @@ router.get('/point_hist',
 	async (req, res) => {
 		const paramStatus = req.query.status ? req.query.status.toUpperCase() : undefined;
 		const filter = {
-			'$or': [
-				{sender_id: req.user._id},
-				{receiver_id: req.user._id},
-			],
-			'$or': [
-				{payer_points_using: {$gt: 0}},
-				{payer_points_gained: {$gt: 0}},
+			'$and':[
+				{'$or': [
+					{sender_id: req.user._id},
+					{receiver_id: req.user._id},
+				]},
+				{'$or': [
+					{payer_points_using: {$gt: 0}},
+					{payer_points_gained: {$gt: 0}},
+				]},
 			],
 		};
 		if (paramStatus) filter.status = paramStatus;
