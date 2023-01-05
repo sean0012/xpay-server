@@ -244,7 +244,7 @@ router.get('/static',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
-		const paymentDate = upcomingSettlement ? upcomingSettlement.date : '';
+		const settlementDate = upcomingSettlement ? new Date(upcomingSettlement.date).getTime() : '';
 		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
 		const price = +collateralPrice.close;
 		const collateralValue = req.user.collateral_amount * price;
@@ -269,7 +269,7 @@ router.get('/static',
 			bank_cs_birth: req.user.bank_cs_birth ? req.user.bank_cs_birth : '',
 			bank_name: req.user.bank_name ? req.user.bank_name : '',
 			bank_account: req.user.bank_account ? req.user.bank_account : '',
-			settlement_date: new Date(paymentDate).getTime(),
+			settlement_date: settlementDate,
 			settlement_period: '30',
 			autotransfer: req.user.autotransfer ? 'YES' : 'NO',
 			exchange_rate: "1.02",
@@ -285,7 +285,7 @@ router.get('/status',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
 		const upcomingSettlement = await Settlement.findOne({done: false}).sort('date').exec();
-		const paymentDate = upcomingSettlement ? upcomingSettlement.date : '';
+		const paymentDate = upcomingSettlement ? new Date(upcomingSettlement.date).getTime() : '';
 		const collateralPrice = await MarketPrice.findOne({}, {}, { sort: { 'timestamp' : -1 } }).exec();
 		const price = +collateralPrice.close;
 		const collateralValue = req.user.collateral_amount * price;
@@ -306,10 +306,10 @@ router.get('/status',
 			deposit: req.user.deposit ? req.user.deposit.toString() : '0',
 			points: req.user.points ? req.user.points.toString() : '0',
 			grade: req.user.grade ? req.user.grade.toString() : '0',
-			remit_date: new Date(0).getTime(),
+			remit_date: '0', // todo: real remit date for once only per 24h
 			remit_count: '0',
 			remit_limit: '100000',
-			repayment_date: new Date(paymentDate).getTime(),
+			repayment_date: paymentDate,
 			repayment_now: req.user.payment_thismonth ? req.user.payment_thismonth.toString() : '0',
 			currency: req.user.currency,
 		});
