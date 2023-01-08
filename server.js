@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const mongoString = process.env.DATABASE_URL;
 const passport = require('passport');
 const Strategy = require('passport-http-bearer').Strategy;
+const requestIp = require('request-ip');
 const routes = require('./routes');
 const Account = require('./models/account');
 const workerSettlement = require('./worker/settlement');
@@ -40,6 +41,7 @@ passport.use(new Strategy(async (token, cb) => {
 
 
 app.use(express.json());
+app.use(requestIp.mw());
 routes.setRoutes(app);
 
 const port = process.env.PORT || 3000;

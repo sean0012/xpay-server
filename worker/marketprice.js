@@ -18,35 +18,36 @@ const getMarketPrice = async (interval) => {
 	const coinoneInterval = coinoneIntervalTable[interval];
 	console.log('coinoneInterval:', coinoneInterval);
 	const url = `${endpoint}/public/v2/chart/${quote}/${base}?interval=${coinoneInterval}`;
-	const response = await axios.get(url);
+	try {
+		const response = await axios.get(url);
 
-	if (!response.data.chart) {
-		console.error('marketprice error: chart data empty',interval, response.data);
-	} else {
-		const docs = response.data.chart.map(item => ({
-			updateOne: {
-				filter: {timestamp: new Date(item.timestamp), interval: interval},
-				update: {
-					'$set': {
-						quote: quote,
-						base: 'MRF',
-						timestamp: new Date(item.timestamp),
-						open: item.open,
-						high: item.high,
-						low: item.low,
-						close: item.close,
-						interval: interval,
-						quote_volume: item.quote_volume,
-					}
-				},
-				upsert: true,
-			}
-		}));
-		
-		const bulkRes = await MarketPrice.bulkWrite(docs);
-		console.log('bulkResult:', interval, bulkRes);
-
-	}
+		if (!response.data.chart) {
+			console.error('marketprice error: chart data empty', interval, response.data);
+		} else {
+			const docs = response.data.chart.map(item => ({
+				updateOne: {
+					filter: {timestamp: new Date(item.timestamp), interval: interval},
+					update: {
+						'$set': {
+							quote: quote,
+							base: 'MRF',
+							timestamp: new Date(item.timestamp),
+							open: item.open,
+							high: item.high,
+							low: item.low,
+							close: item.close,
+							interval: interval,
+							quote_volume: item.quote_volume,
+						}
+					},
+					upsert: true,
+				}
+			}));
+			const bulkRes = await MarketPrice.bulkWrite(docs);
+		}
+	} catch (error) {
+    console.error(error);
+  }
 	
 	setTimeout(() => {
 		getMarketPrice(interval);

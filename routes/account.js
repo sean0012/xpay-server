@@ -33,17 +33,59 @@ router.post('/first_run', async (req, res) => {
 		});
 		return;
 	}
+	const geolocation = req.body.geolocation;
+
+	let headerAuth = req.get('Authorization');
+	let lastLoginInfo = {};
+	if (headerAuth) {
+		const token = headerAuth.replace('Bearer ', '');
+		const userIp = req.clientIp;
+		try {
+			const updateData = {
+				login_date: new Date(),
+				login_ip: userIp,
+			};
+			if (geolocation) {
+				updateData.geolocation = geolocation;
+			}
+			const tempUserData = await Account.findOne({auth_token: token}).exec();
+			lastLoginInfo.last_geolocation = tempUserData.geolocation;
+			lastLoginInfo.last_login_date = tempUserData.login_date ? new Date(tempUserData.login_date).getTime() : '';
+			lastLoginInfo.last_login_ip = tempUserData.login_ip;
+			const userAccount = await Account.findOneAndUpdate(
+				{auth_token: token},
+				updateData,
+			).exec();
+		} catch(error) {
+			console.error(`pamt_comp merchant findOneAndUpdate() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
+		}
+	}
 
 	// retrieve DB value
 	const v = await Version.findOne().exec();
 
 	// respond version check result
 	if (paramVersion < Number(v.version_min)) {
-		res.json({ result: 'MUST' });
+		res.json({
+			result: 'MUST',
+			last_geolocation: lastLoginInfo.last_geolocation,
+			last_login_date: lastLoginInfo.last_login_date,
+			last_login_ip: lastLoginInfo.last_login_ip,
+		});
 	} else if (paramVersion < Number(v.version)) {
-		res.json({ result: 'LOW' });
+		res.json({
+			result:	'LOW',
+			last_geolocation: lastLoginInfo.last_geolocation,
+			last_login_date: lastLoginInfo.last_login_date,
+			last_login_ip: lastLoginInfo.last_login_ip,
+		});
 	} else {
-		res.json({ result: 'OK' });
+		res.json({
+			result: 'OK',
+			last_geolocation: lastLoginInfo.last_geolocation,
+			last_login_date: lastLoginInfo.last_login_date,
+			last_login_ip: lastLoginInfo.last_login_ip,
+		});
 	}
 });
 
