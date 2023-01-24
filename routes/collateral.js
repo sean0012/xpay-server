@@ -649,6 +649,25 @@ router.post('/cltr_rset',
 			});
 			return;
 		}
+		if (!req.body.collateral_rls_amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter collateral_rls_amount is required'
+				}
+			});
+			return;
+		}
+		const releaseAmount = req.body.collateral_rls_amount;
+		if (isNaN(releaseAmount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter collateral_rls_amount is not a number'
+				}
+			});
+			return;
+		}
 
 		const collateral = await Collateral.findOne({approval_id: req.body.approval_id}).exec();
 		if (!collateral) {
@@ -665,25 +684,6 @@ router.post('/cltr_rset',
 				error: {
 					code: 'INVALID_STATUS_RESET',
 					message: `Collateral status is ${collateral.status}`
-				}
-			});
-			return;
-		}
-		if (!req.body.collateral_rls_amount) {
-			res.status(400).json({
-				error: {
-					code: 'MISSING_REQUIRED_PARAMS',
-					message: 'Parameter collateral_rls_amount is required'
-				}
-			});
-			return;
-		}
-		const releaseAmount = req.body.collateral_rls_amount;
-		if (isNaN(releaseAmount)) {
-			res.status(400).json({
-				error: {
-					code: 'INVALID_PARAMS',
-					message: 'Parameter collateral_rls_amount is not a number'
 				}
 			});
 			return;

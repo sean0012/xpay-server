@@ -311,6 +311,25 @@ router.post('/pamt_cnfm',
 			});
 			return;
 		}
+		if (!req.body.amount) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter amount is required'
+				}
+			});
+			return;
+		}
+		const amount = Number(req.body.amount);
+		if (isNaN(amount)) {
+			res.status(400).json({
+				error: {
+					code: 'INVALID_PARAMS',
+					message: 'Parameter amount is not a number'
+				}
+			});
+			return;
+		}
 
 		const params = {
 			dynamic_code: req.body.dynamic_code,
@@ -343,25 +362,7 @@ router.post('/pamt_cnfm',
 			});
 			return;
 		}
-		if (!req.body.amount) {
-			res.status(400).json({
-				error: {
-					code: 'MISSING_REQUIRED_PARAMS',
-					message: 'Parameter amount is required'
-				}
-			});
-			return;
-		}
-		const amount = Number(req.body.amount);
-		if (isNaN(amount)) {
-			res.status(400).json({
-				error: {
-					code: 'INVALID_PARAMS',
-					message: 'Parameter amount is not a number'
-				}
-			});
-			return;
-		}
+
 		if (req.body.items) {
 			const valid = Util.checkPrice(amount, req.body.items);
 			if (!valid) {
