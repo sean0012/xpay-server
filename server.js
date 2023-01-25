@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const mongoString = process.env.DATABASE_URL;
 const passport = require('passport');
@@ -40,6 +41,7 @@ passport.use(new Strategy(async (token, cb) => {
 }));
 
 
+app.use(cors());
 app.use(express.json());
 app.use(requestIp.mw());
 routes.setRoutes(app);
