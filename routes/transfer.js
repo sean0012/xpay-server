@@ -11,6 +11,7 @@ const passport = require('passport');
 const Util = require('../util');
 const moment = require('moment');
 const admin = require('../firebase-config').admin;
+const axios = require('axios');
 
 // 거래 내역
 router.get('/trade_hist',
@@ -447,6 +448,9 @@ router.post('/pamt_cnfm',
 router.post('/pamt_init',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
+		console.log('req host:', req.get('host'));
+		console.log('req origin:', req.get('origin'));
+		console.log('req host:', req.clientIp);
 		// validate params
 		if (!req.body.amount) {
 			res.status(400).json({
@@ -516,6 +520,9 @@ router.post('/pamt_init',
 			status: 'INIT',
 			dynamic_code: code,
 			expiry: expiry,
+			shop_return_url: req.body.return_url,
+			shop_data: req.body.shop_data,
+			shop_order_id: req.body.shop_order_id,
 		});
 		const created = await newTransfer.save();
 		if (created) {
@@ -805,6 +812,22 @@ router.post('/pamt_comp',
 			await transfer.save();
 		} catch(error) {
 			console.error(`pamt_comp transfer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
+		}
+
+		if (transfer.shop_return_url) {
+			console.log('shop data:',transfer.shop_data);
+			const parsed = JSON.parse(transfer.shop_data);
+			console.log('parsed shop data:',parsed);
+			const data = {
+				orderNumber: transfer.shop_order_id,
+				od_send_cost: transfer.amount,
+				data: transfer.shop_data,
+			};
+			console.log('POST data:',data);
+
+			await axios.post(transfer.shop_return_url, data).catch(err => {
+				console.error('axios post catch:', err);
+			});
 		}
 		// Firebase Cloud Message
 		// admin.getMessaging().send({

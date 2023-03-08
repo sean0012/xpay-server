@@ -33,6 +33,9 @@ const dataSchema = new mongoose.Schema({
 	memo: {type: String, maxLength: 256},
 	payer_signature: {type: String, maxLength: 256},
 	payment_time: {type: Date},
+	shop_return_url: {type: String},
+	shop_order_id: {type: String},
+	shop_data: {type: String},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Transfer', dataSchema);
