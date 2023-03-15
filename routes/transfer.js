@@ -815,17 +815,16 @@ router.post('/pamt_comp',
 		}
 
 		if (transfer.shop_return_url) {
-			console.log('shop data:',transfer.shop_data);
-			const parsed = JSON.parse(transfer.shop_data);
-			console.log('parsed shop data:',parsed);
 			const data = {
-				orderNumber: transfer.shop_order_id,
-				od_send_cost: transfer.amount,
-				data: transfer.shop_data,
+			// 	orderNumber: transfer.shop_order_id,
+			// 	od_send_cost: transfer.amount,
+			// 	data: transfer.shop_data,
 			};
-			console.log('POST data:',data);
+			// console.log('POST data:',data);
 
-			await axios.post(transfer.shop_return_url, data).catch(err => {
+			await axios.post(transfer.shop_return_url, data).then(r => {
+				console.log('axios post then', r);
+			}).catch(err => {
 				console.error('axios post catch:', err);
 			});
 		}
