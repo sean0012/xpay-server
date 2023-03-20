@@ -2,12 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>EJS Is Fun</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css">
   <style>
-    body { padding-top:50px; }
+    .main{background:#fff;padding:1rem;}
+    .countdown{font-size:2rem;padding:1rem;}
+    .seperator{display:inline-block;text-align:center}
+    #expireMinutes{min-width:50px;display:inline-block;text-align:right}
+    #expireSeconds{min-width:50px;display:inline-block;text-align:right}
   </style>
+  <script src="/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-  <h1>X-Pay</h1>
+  <div class="main">
+    <h1>X-Pay</h1>
+    <div class="paymentRequestWrap">
+      <div class="pure-g">
+        <div class="pure-u-1-2">
+          <div id="xpay_qrcode"></div>
+        </div>
+        <div class="pure-u-1-2">
+          <p>결제 금액 : <%= amt %></p>
+          <p>Dynamic Code : <label id="dynamicCode"></label></p>
+          <label id="expireLabel">The payment expires in</label>
+          <div class="countdown">
+            <div id="expireMinutes"></div>
+            <div class="seperator">:</div>
+            <div id="expireSeconds"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="paymentResultWrap">
+      <p></p>
+    </div>
+    <button onClick="cancel()" class="pure-button pure-button-active button-large">결제취소</button>
+  </div>
+  <script>
+    const authorization = '<%= authorization %>';
+    const amount = '<%= amt %>';
+    let session_id;
+    let countDownDate;
+    const timer = setInterval(function() {
+      var now = new Date().getTime();
+      var distance = countDownDate - now;
+      if (distance <= 0) {
+        clearInterval(timer);
+        document.querySelector('#expireLabel').textContent = 'EXPIRED';
+      } else {
+        axios.post('http://localhost:4000/api/v1/trade/pamt_check', {
+          session_id: session_id
+        }, {
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': authorization
+          },
+        }).then(res => {
+          if (res.data.paymentStatus === 'PAID') {
+            clearInterval(timer);
+            window.parent.postMessage({
+              "code": "0",
+              "message": "success",
+              "result": {
+                "AuthToken": "NICETOKN1560F07247C3FD597FAE30BD800FC7D0",
+                "TxTid": "nicepay00m01012303131528482975",
+                "NextAppURL": "https://webapi.nicepay.co.kr/webapi/pay_process.jsp",
+                "NetCancelURL": "https://webapi.nicepay.co.kr/webapi/cancel_process.jsp",
+                "Signature": "1f09f358d0982f5240a7dc04a0935a0095b092f1759ff4f35f09181de1636c38",
+                "BillAuthYN": "N"
+              }
+            }, '*');
+          }
+        });
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        document.querySelector('#expireMinutes').textContent = minutes;
+        document.querySelector('#expireSeconds').textContent = seconds;
+      }
+    }, 1000);
+     axios.post('http://localhost:4000/api/v1/trade/pamt_init', {
+          'amount': amount
+      }, {
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': authorization
+          },
+      }).then(res => {
+          console.log('then res:',res.data);
+          countDownDate = res.data.expire;
+          session_id = res.data.session_id;
+          document.querySelector('#dynamicCode').textContent = res.data.dynamic_code;
+          new QRCode(document.getElementById('xpay_qrcode'), {
+              text: res.data.dynamic_code,
+              width: 128,
+              height: 128
+          });
+      });
+
+      function cancel() {
+        window.parent.postMessage({
+          "code": "1",
+          "message": "cancel",
+          "result": {
+            "AuthResultMsg": "cancelled",
+            "AuthResultCode": "MOON",
+          }
+        }, '*');
+      }
+  </script>
 </body>
 </html>

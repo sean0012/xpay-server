@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.1.3",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "ejs": "^3.1.9",
@@ -22,6 +23,7 @@
     "mongoose": "^6.3.3",
     "passport": "^0.5.3",
     "passport-http-bearer": "^1.0.1",
+    "path": "^0.12.7",
     "request-ip": "^3.3.0"
   },
   "devDependencies": {

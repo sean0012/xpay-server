@@ -448,9 +448,6 @@ router.post('/pamt_cnfm',
 router.post('/pamt_init',
 	passport.authenticate('bearer', { session: false }),
 	async (req, res) => {
-		console.log('req host:', req.get('host'));
-		console.log('req origin:', req.get('origin'));
-		console.log('req host:', req.clientIp);
 		// validate params
 		if (!req.body.amount) {
 			res.status(400).json({
@@ -612,6 +609,36 @@ router.post('/pamt_init_refresh',
 				message: 'Error occured while updating transfer'
 			});
 		}
+	}
+);
+
+router.post('/pamt_check',
+	passport.authenticate('bearer', { session: false }),
+	async (req, res) => {
+		if (!req.body.session_id) {
+			res.status(400).json({
+				error: {
+					code: 'MISSING_REQUIRED_PARAMS',
+					message: 'Parameter session_id is required'
+				}
+			});
+			return;
+		}
+		const transfer = await Transfer.findOne({
+			_id: req.body.session_id,
+		}).exec();
+		if (!transfer) {
+			res.status(422).json({
+				error: {
+					code: 'DATA_NOT_FOUND',
+					message: `Payment data not found in server DB`
+				}
+			});
+			return;
+		}
+		res.json({
+			paymentStatus: transfer.status,
+		});
 	}
 );
 
@@ -814,20 +841,6 @@ router.post('/pamt_comp',
 			console.error(`pamt_comp transfer.save() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
 		}
 
-		if (transfer.shop_return_url) {
-			const data = {
-			// 	orderNumber: transfer.shop_order_id,
-			// 	od_send_cost: transfer.amount,
-			// 	data: transfer.shop_data,
-			};
-			// console.log('POST data:',data);
-
-			await axios.post(transfer.shop_return_url, data).then(r => {
-				console.log('axios post then', r);
-			}).catch(err => {
-				console.error('axios post catch:', err);
-			});
-		}
 		// Firebase Cloud Message
 		// admin.getMessaging().send({
 		// 	data: {
