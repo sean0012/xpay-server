@@ -9,6 +9,7 @@
     .seperator{display:inline-block;text-align:center}
     #expireMinutes{min-width:50px;display:inline-block;text-align:right}
     #expireSeconds{min-width:50px;display:inline-block;text-align:right}
+    .paymentResultWrap{display:none}
   </style>
   <script src="/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -34,7 +35,8 @@
       </div>
     </div>
     <div class="paymentResultWrap">
-      <p></p>
+      <p>정상 처리 되었습니다</p>
+      <p>3초 후 주문상세 페이지로 이동합니다</p>
     </div>
     <button onClick="cancel()" class="pure-button pure-button-active button-large">결제취소</button>
   </div>
@@ -50,28 +52,34 @@
         clearInterval(timer);
         document.querySelector('#expireLabel').textContent = 'EXPIRED';
       } else {
-        axios.post('http://localhost:4000/api/v1/trade/pamt_check', {
+        axios.post('http://121.140.119.11:4000/api/v1/trade/pamt_check', {
           session_id: session_id
         }, {
           headers: {
-              'Content-Type': 'application/json',
-              'Authorization': authorization
+            'Content-Type': 'application/json',
+            'Authorization': authorization
           },
         }).then(res => {
           if (res.data.paymentStatus === 'PAID') {
             clearInterval(timer);
-            window.parent.postMessage({
-              "code": "0",
-              "message": "success",
-              "result": {
-                "AuthToken": "NICETOKN1560F07247C3FD597FAE30BD800FC7D0",
-                "TxTid": "nicepay00m01012303131528482975",
-                "NextAppURL": "https://webapi.nicepay.co.kr/webapi/pay_process.jsp",
-                "NetCancelURL": "https://webapi.nicepay.co.kr/webapi/cancel_process.jsp",
-                "Signature": "1f09f358d0982f5240a7dc04a0935a0095b092f1759ff4f35f09181de1636c38",
-                "BillAuthYN": "N"
-              }
-            }, '*');
+
+            document.querySelector('.paymentRequestWrap').css('display', 'none');
+            document.querySelector('.paymentResultWrap').css('display', 'block');
+
+            setTimeout(function() {
+              window.parent.postMessage({
+                "code": "0",
+                "message": "success",
+                "result": {
+                  "AuthToken": "NICETOKN1560F07247C3FD597FAE30BD800FC7D0",
+                  "TxTid": "nicepay00m01012303131528482975",
+                  "NextAppURL": "https://webapi.nicepay.co.kr/webapi/pay_process.jsp",
+                  "NetCancelURL": "https://webapi.nicepay.co.kr/webapi/cancel_process.jsp",
+                  "Signature": "1f09f358d0982f5240a7dc04a0935a0095b092f1759ff4f35f09181de1636c38",
+                  "BillAuthYN": "N"
+                }
+              }, '*');
+            }, 3000);
           }
         });
         var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -80,12 +88,12 @@
         document.querySelector('#expireSeconds').textContent = seconds;
       }
     }, 1000);
-     axios.post('http://localhost:4000/api/v1/trade/pamt_init', {
+     axios.post('http://121.140.119.11:4000/api/v1/trade/pamt_init', {
           'amount': amount
       }, {
           headers: {
-              'Content-Type': 'application/json',
-              'Authorization': authorization
+            'Content-Type': 'application/json',
+            'Authorization': authorization
           },
       }).then(res => {
           console.log('then res:',res.data);
