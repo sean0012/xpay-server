@@ -52,7 +52,7 @@
         clearInterval(timer);
         document.querySelector('#expireLabel').textContent = 'EXPIRED';
       } else {
-        axios.post('http://121.140.119.11:4000/api/v1/trade/pamt_check', {
+        axios.post('https://www.mrf.kr/api/v1/trade/pamt_check', {
           session_id: session_id
         }, {
           headers: {
@@ -88,7 +88,7 @@
         document.querySelector('#expireSeconds').textContent = seconds;
       }
     }, 1000);
-     axios.post('http://121.140.119.11:4000/api/v1/trade/pamt_init', {
+     axios.post('https://www.mrf.kr/api/v1/trade/pamt_init', {
           'amount': amount
       }, {
           headers: {
