@@ -15,4 +15,15 @@ router.post('/', (req, res) => {
     res.render('payment', obj);
 });
 
+router.get('/', (req, res) => {
+    const obj = {
+        amt: '500',
+        authorization: 'test auth',
+    };
+    console.log('GET payment obj:', obj);
+
+    res.render('payment', obj);
+});
+
+
 module.exports = router;
