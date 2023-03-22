@@ -63,8 +63,8 @@
           if (res.data.paymentStatus === 'PAID') {
             clearInterval(timer);
 
-            document.querySelector('.paymentRequestWrap').css('display', 'none');
-            document.querySelector('.paymentResultWrap').css('display', 'block');
+            document.querySelector('.paymentRequestWrap').style.display = 'none';
+            document.querySelector('.paymentResultWrap').style.display = 'block';
 
             setTimeout(function() {
               window.parent.postMessage({
