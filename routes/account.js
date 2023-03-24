@@ -45,6 +45,9 @@ router.post('/first_run', async (req, res) => {
 				login_date: new Date(),
 				login_ip: userIp,
 			};
+			if (req.body.fcm_token) {
+				updateData.fcm_token = req.body.fcm_token;
+			}
 			if (geolocation) {
 				updateData.geolocation = geolocation;
 			}
