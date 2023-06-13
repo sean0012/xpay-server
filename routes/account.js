@@ -53,7 +53,7 @@ router.post('/first_run', async (req, res) => {
 			}
 			const tempUserData = await Account.findOne({auth_token: token}).exec();
 			lastLoginInfo.last_geolocation = tempUserData.geolocation;
-			lastLoginInfo.last_login_date = tempUserData.login_date ? new Date(tempUserData.login_date).getTime() : '';
+			lastLoginInfo.last_login_date = tempUserData.login_date ? new Date(tempUserData.login_date).getTime() : 0;
 			lastLoginInfo.last_login_ip = tempUserData.login_ip;
 			const userAccount = await Account.findOneAndUpdate(
 				{auth_token: token},
