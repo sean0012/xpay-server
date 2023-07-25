@@ -13,7 +13,7 @@ const setRoutes = (app) => {
 	app.use('/api/v1/banking', ledger);
 	app.use('/api/v1/cltr', collateral);
 	app.use('/api/v1/market_price', marketPrice);
-	app.use('/payment', payment);
+		app.use('/payment', payment);
 
 	app.use((req, res, next) => {
 		res.status(404).json({

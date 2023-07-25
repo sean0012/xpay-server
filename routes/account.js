@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const Version = require('../models/version');
 const Account = require('../models/account');
+const Card = require('../models/card');
 const Collateral = require('../models/collateral');
 const Settlement = require('../models/settlement');
 const MarketPrice = require('../models/market_price');
@@ -503,6 +504,91 @@ router.patch('/modi_s_hash', passport.authenticate('bearer', { session: false })
 	res.json({
 		result: 'OK'
 	});
+});
+
+router.get('/card_list', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	console.log('card list');
+	const cards = await Card.find({
+		account_id: req.user._id
+	}).exec();
+
+	const data = cards.map(card => ({
+		card_number: card.card_number,
+		holder: card.holder,
+		cvv: card.cvv,
+		date: card.date,
+	}));
+
+	res.json({
+		data
+	});
+});
+
+router.post('/add_card', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	if (!req.body.card_number) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_CARD_NUMBER',
+				message: 'Parameter card_number is missing'
+			}
+		});
+		return;
+	}
+	if (!req.body.holder) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_HOLDER',
+				message: 'Parameter holder is missing'
+			}
+		});
+		return;
+	}
+	if (!req.body.cvv) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_CVV',
+				message: 'Parameter cvv is missing'
+			}
+		});
+		return;
+	}
+	if (!req.body.date) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_DATE',
+				message: 'Parameter date is missing'
+			}
+		});
+		return;
+	}
+
+	const payload = {
+		account_id: req.user._id,
+		card_number: req.body.card_number,		
+	};
+	const account = await Card.findOne(payload).exec();
+
+	if (!account) {
+		const newCard = new Card({
+			account_id: req.user._id,
+			card_number: req.body.card_number,
+			holder: req.body.holder,
+			cvv: req.body.cvv,
+			date: req.body.date,
+		});
+		const created = await newCard.save();
+
+		res.json({
+			result: 'OK'
+		});
+	} else {
+		res.status(422).json({
+			error: {
+				code: 'CARD_EXISTS',
+				message: 'Card exists'
+			}
+		});
+	}
 });
 
 module.exports = router;
