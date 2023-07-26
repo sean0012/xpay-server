@@ -499,6 +499,8 @@ router.patch('/modi_s_hash', passport.authenticate('bearer', { session: false })
 		return;
 	}
 
+
+
 	req.user.secret_hash = req.body.new_secret_hash;
 	const updatedUser = await req.user.save();
 	res.json({
@@ -536,8 +538,12 @@ router.post('/select_card', passport.authenticate('bearer', { session: false }),
 		return;
 	}
 
-	req.user.card_number = req.body.card_number;
-	const updatedUser = await req.user.save();
+	const userAccount = await Account.findOneAndUpdate(
+		{wallet: req.user.wallet},
+		{card_number: req.body.card_number},
+	).exec();
+
+	const updatedUser = await userAccount.save();
 	res.json({
 		result: 'OK'
 	});
