@@ -44,6 +44,7 @@ const dataSchema = new mongoose.Schema({
 	currency: {type: String},
 	memo_1: {type: String},
 	memo_2: {type: String},
+	selected_card: {type: String},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Account', dataSchema);

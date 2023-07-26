@@ -520,7 +520,26 @@ router.get('/card_list', passport.authenticate('bearer', { session: false }), as
 	}));
 
 	res.json({
+		selected_card: req.user.selected_card,
 		data
+	});
+});
+
+router.post('/select_card', passport.authenticate('bearer', { session: false }), async (req, res) => {
+	if (!req.body.card_number) {
+		res.status(400).json({
+			error: {
+				code: 'MISSING_PARAM_CARD_NUMBER',
+				message: 'Parameter card_number is missing'
+			}
+		});
+		return;
+	}
+
+	req.user.card_number = req.body.card_number;
+	const updatedUser = await req.user.save();
+	res.json({
+		result: 'OK'
 	});
 });
 
