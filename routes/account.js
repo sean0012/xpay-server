@@ -520,7 +520,7 @@ router.get('/card_list', passport.authenticate('bearer', { session: false }), as
 	}));
 
 	res.json({
-		selected_card: req.user.selected_card,
+		selected_card: req.user.selected_card ? req.user.selected_card : '',
 		data
 	});
 });
