@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const Account = require('../models/account');
 const Transfer = require('../models/transfer');
+const Card = require('../models/card');
 const Settlement = require('../models/settlement');
 const passport = require('passport');
 const Util = require('../util');
