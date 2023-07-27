@@ -695,6 +695,17 @@ router.post('/pamt_cont',
 			quantity: item.quantity ? item.quantity.toString() : '0',
 		}));
 
+		const cards = await Card.find({
+			account_id: req.user._id
+		}).exec();
+
+		const data = cards.map(card => ({
+			card_number: card.card_number,
+			holder: card.holder,
+			cvv: card.cvv,
+			date: card.date,
+		}));
+
 		res.json({
 			session_id: transfer._id,
 			merchant_name: transfer.receiver_name,
@@ -702,6 +713,8 @@ router.post('/pamt_cont',
 			amount: transfer.amount ? transfer.amount.toString() : '0',
 			items,
 			dynamic_code: transfer.dynamic_code,
+			selected_card: req.user.selected_card ? req.user.selected_card : '',
+			card_list: data,
 		});
 	}
 );
@@ -834,6 +847,13 @@ router.post('/pamt_comp',
 		transfer.memo = req.body.memo_message;
 		transfer.payer_signature = req.body.payer_signature;
 		transfer.payment_time = Date.now();
+
+		if (req.body.payment_method) {
+			transfer.payment_method = req.body.payment_method;
+			if (req.body.payment_card_id) {
+				transfer.payment_card_id = req.body.payment_card_id;
+			}
+		}
 
 		try {
 			await transfer.save();

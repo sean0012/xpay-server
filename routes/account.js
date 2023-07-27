@@ -540,10 +540,9 @@ router.post('/select_card', passport.authenticate('bearer', { session: false }),
 
 	const userAccount = await Account.findOneAndUpdate(
 		{wallet: req.user.wallet},
-		{card_number: req.body.card_number},
+		{selected_card: req.body.card_number},
 	).exec();
 
-	const updatedUser = await userAccount.save();
 	res.json({
 		result: 'OK'
 	});
@@ -591,9 +590,9 @@ router.post('/add_card', passport.authenticate('bearer', { session: false }), as
 		account_id: req.user._id,
 		card_number: req.body.card_number,		
 	};
-	const account = await Card.findOne(payload).exec();
+	const card = await Card.findOne(payload).exec();
 
-	if (!account) {
+	if (!card) {
 		const newCard = new Card({
 			account_id: req.user._id,
 			card_number: req.body.card_number,

@@ -36,6 +36,8 @@ const dataSchema = new mongoose.Schema({
 	shop_return_url: {type: String},
 	shop_order_id: {type: String},
 	shop_data: {type: String},
+	payment_method: {type: String}, // CARD | XPAY
+	payment_card_id: {type: String},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Transfer', dataSchema);
