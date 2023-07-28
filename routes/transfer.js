@@ -96,7 +96,9 @@ router.get('/trade_hist',
 			memo: transfer.memo,
 			created_at: new Date(transfer.createdAt).getTime(),
 			trade_datetime: new Date(transfer.payment_time).getTime(),
-			settlement: transfer.settlement
+			settlement: transfer.settlement,
+			payment_method: transfer.payment_method ? transfer.payment_method : '',
+			payment_card_id: transfer.payment_card_id ? transfer.payment_card_id : '',
 		}));
 
 		const last_session_id = data.length && data[data.length - 1].session_id;
