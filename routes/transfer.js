@@ -874,10 +874,10 @@ router.post('/pamt_comp',
 			},
 			data: {
 				message_name: 'PAMT_COMP_NOTI',
-				session_id: transfer._id,
+				//session_id: transfer._id,
 				noti_type: 'COMP',
 				title: '',
-				trade_datetime: new Date(transfer.payment_time).getTime().toString(),
+				//trade_datetime: new Date(transfer.payment_time).getTime().toString(),
 				amount: transfer.amount.toString(),
 			},
 			token: merchant.fcm_token
