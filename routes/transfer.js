@@ -840,14 +840,10 @@ router.post('/pamt_comp',
 		let marchantGain = transfer.amount;
 		if (transfer.fee) marchantGain -= transfer.fee;
 
-		try {
-			const merchant = await Account.findOneAndUpdate(
-				{_id: transfer.receiver_id},
-				{$inc: {token_balance: marchantGain}}
-			).exec();
-		} catch(error) {
-			console.error(`pamt_comp merchant findOneAndUpdate() error: ${error}, req.body: ${JSON.stringify(req.body)},`);
-		}
+		const merchant = await Account.findOneAndUpdate(
+			{_id: transfer.receiver_id},
+			{$inc: {token_balance: marchantGain}}
+		).exec();
 
 		transfer.approval_id = Util.generateApprovalId();
 		transfer.status = 'PAID';
