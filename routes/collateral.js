@@ -10,7 +10,6 @@ const MarketPrice = require('../models/market_price');
 const passport = require('passport');
 const Util = require('../util');
 const moment = require('moment');
-const admin = require('../firebase-config').admin;
 
 // 담보 내역
 router.get('/cltr_hist',

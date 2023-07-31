@@ -11,8 +11,14 @@ const Settlement = require('../models/settlement');
 const passport = require('passport');
 const Util = require('../util');
 const moment = require('moment');
-const admin = require('../firebase-config').admin;
 const axios = require('axios');
+
+const firebaseAdmin = require('firebase-admin');
+const serviceAccount = require('../xpay-2c160-firebase-adminsdk-lzk96-1f6d39e70a.json');
+const firebasdApp = firebaseAdmin.initializeApp({
+	credential: firebaseAdmin.credential.cert(serviceAccount),
+	databaseURL: "https://planar-beach-791.firebaseio.com"
+});
 
 // 거래 내역
 router.get('/trade_hist',
@@ -865,17 +871,28 @@ router.post('/pamt_comp',
 		}
 
 		// Firebase Cloud Message
-		// admin.getMessaging().send({
-		// 	data: {
-		// 		message_name: 'PAMT_COMP_NOTI',
-		// 		session_id: transfer._id,
-		// 		noti_type: 'COMP',
-		// 		title: '',
-		// 		trade_datetime: new Date(transfer.payment_time).getTime(),
-		// 		amount: transfer.amount.toString(),
-		// 	},
-		// 	token: merchant.fcm_token,
-		// });
+		const message = {
+			notification: {
+				'title': 'This is the notification title',
+				'body': 'This is the notification body'
+			},
+			data: {
+				message_name: 'PAMT_COMP_NOTI',
+				session_id: transfer._id,
+				noti_type: 'COMP',
+				title: '',
+				trade_datetime: new Date(transfer.payment_time).getTime(),
+				amount: transfer.amount.toString(),
+			},
+			token: merchant.fcm_token
+		};
+
+		firebasdApp.messaging().send(message).then((response) => {
+			 console.log('Successfully sent message:', response);
+		}).catch((error) => {
+			 console.log('Error sending message:', error);
+		});
+
 		res.json({
 			result: 'OK'
 		});
