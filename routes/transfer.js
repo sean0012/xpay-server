@@ -877,7 +877,7 @@ router.post('/pamt_comp',
 				session_id: transfer._id,
 				noti_type: 'COMP',
 				title: '',
-				trade_datetime: new Date(transfer.payment_time).getTime(),
+				trade_datetime: new Date(transfer.payment_time).getTime().toString(),
 				amount: transfer.amount.toString(),
 			},
 			token: merchant.fcm_token
