@@ -872,22 +872,26 @@ router.post('/pamt_comp',
 				'title': 'This is the notification title',
 				'body': 'This is the notification body'
 			},
-			data: {
+			data: JSON.stringify({
 				message_name: 'PAMT_COMP_NOTI',
 				session_id: transfer._id,
 				noti_type: 'COMP',
 				title: '',
 				trade_datetime: new Date(transfer.payment_time).getTime(),
 				amount: transfer.amount.toString(),
-			},
+			}),
 			token: merchant.fcm_token
 		};
 
-		firebasdApp.messaging().send(message).then((response) => {
-			 console.log('Successfully sent message:', response);
-		}).catch((error) => {
-			 console.log('Error sending message:', error);
-		});
+		try {
+			firebasdApp.messaging().send(message).then((response) => {
+				 console.log('Successfully sent message:', response);
+			}).catch((error) => {
+				 console.log('Error sending message:', error);
+			});
+		} catch(err) {
+
+		}
 
 		res.json({
 			result: 'OK'
