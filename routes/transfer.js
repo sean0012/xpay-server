@@ -883,6 +883,22 @@ router.post('/pamt_comp',
 			token: merchant.fcm_token
 		};
 
+		const message2 = {
+			notification: {
+				'title': 'This is the notification title',
+				'body': 'This is the notification body'
+			},
+			data: {
+				message_name: 'PAMT_COMP_NOTI',
+				//session_id: transfer._id,
+				noti_type: 'COMP',
+				title: '',
+				//trade_datetime: new Date(transfer.payment_time).getTime().toString(),
+				amount: transfer.amount.toString(),
+			},
+			token: req.user.fcm_token
+		};
+
 		try {
 			firebasdApp.messaging().send(message).then((response) => {
 				 console.log('Successfully sent message:', response);
@@ -891,6 +907,16 @@ router.post('/pamt_comp',
 			});
 		} catch(err) {
 			console.error('firebasdApp messaging send catch ERROR::', err);
+		}
+
+		try {
+			firebasdApp.messaging().send(message2).then((response) => {
+				 console.log('Successfully sent message2:', response);
+			}).catch((error) => {
+				 console.log('Error sending message:2', error);
+			});
+		} catch(err) {
+			console.error('firebasdApp messaging2 send catch ERROR::', err);
 		}
 
 		res.json({
